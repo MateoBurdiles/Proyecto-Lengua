@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>El tonel de amontillado - Edición Definitiva</title>
+<style>
+:root{--bg:#150f0d;--fg:#f4ebd0;--pn:#241a16;--ac:#c0392b;--mu:#b39d80;--bd:#4a3a2c;box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#120c08;--fg:#f4ebd0;--pn:#1f1610;--ac:#e0553f;--mu:#b39d80;--bd:#4a3a2c}}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,"Times New Roman",serif}
+#app{width:min(100%,600px);margin:0 auto;padding:12px 14px 30px;box-sizing:border-box}
+h1{font-size:21px;margin:6px 0 8px;font-style:italic;letter-spacing:.5px;text-align:center;color:#e6cca6;text-shadow:0 2px 4px rgba(0,0,0,0.5)}
+#hud{display:flex;gap:6px;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:10px;flex-wrap:wrap}
+#hud span{background:var(--pn);border:1px solid var(--bd);border-radius:14px;padding:4px 10px;box-shadow:inset 0 1px 3px rgba(0,0,0,0.3)}
+#st{border:3px solid var(--bd);border-radius:10px;overflow:hidden;background:#050302;box-shadow:0 8px 24px rgba(0,0,0,0.6);line-height:0}
+svg{width:100%;height:auto;display:block;touch-action:manipulation}
+svg text{font-family:Georgia,serif}
+.h{cursor:pointer;transition:transform .15s ease}.h:hover{filter:brightness(1.2)}.h:active{opacity:.7}
+#tx{margin:14px 0 12px;font-size:16px;line-height:1.6;min-height:80px;background:var(--pn);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;box-shadow:inset 0 1px 4px rgba(0,0,0,0.2)}
+#bt{display:flex;flex-direction:column;gap:8px}
+button{font:inherit;font-size:15px;padding:12px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--pn);color:var(--fg);text-align:left;cursor:pointer;min-height:48px;touch-action:manipulation;box-shadow:0 3px 6px rgba(0,0,0,0.3);transition:all .2s ease}
+button:hover{border-color:var(--ac);background:#2f2219}
+button:active{background:var(--ac);color:#fff;transform:translateY(1px)}
+button:disabled{opacity:.4;border-color:var(--bd);cursor:not-allowed}
+#hud button{padding:4px 12px;text-align:center;background:#3a291c}
+#lg{display:none;background:var(--pn);border:1px solid var(--bd);border-radius:10px;padding:12px 16px;margin-top:10px;font-size:14px;line-height:1.6;box-shadow:0 6px 16px rgba(0,0,0,0.4)}
+@keyframes pop{0%{transform:scale(.7) translateY(-16px);opacity:.3}55%{transform:scale(1.1) translateY(2px)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px) rotate(-2deg)}40%{transform:translateX(6px) rotate(2deg)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+@keyframes spark{0%{opacity:1;transform:translateY(0) scale(.5)}100%{opacity:0;transform:translateY(-46px) scale(1.4)}}
+.an{transform-box:fill-box;transform-origin:50% 100%}.sp{transform-origin:50% 50%;animation:spark .9s ease-out both}
+.f_ok{animation:pop .45s ease-out}.f_bad{animation:shake .4s}.f_lucky{animation:pop .5s ease-out;filter:drop-shadow(0 0 6px #ffd966)}
+#st{position:relative}
+@keyframes sin{from{opacity:0;transform:scale(1.07);filter:brightness(2.2) blur(2px)}to{opacity:1;transform:none;filter:none}}
+@keyframes cv{from{opacity:1}to{opacity:0}}
+@keyframes bn{0%{opacity:0;transform:translate(-50%,-16px)}15%,75%{opacity:1;transform:translate(-50%,0)}100%{opacity:0;transform:translate(-50%,-8px)}}
+@keyframes tn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes fall{from{transform:translateY(-20px) rotate(0)}to{transform:translateY(345px) rotate(360deg)}}
+@keyframes rise{0%{transform:translateY(0);opacity:0}20%{opacity:.9}100%{transform:translateY(-130px);opacity:0}}
+.sin{animation:sin .55s ease-out}.cv{position:absolute;inset:0;background:#000;animation:cv .6s ease-out both;pointer-events:none}
+.bn{position:absolute;left:50%;top:10px;background:rgba(10,6,4,.82);border:1px solid #c9a063;border-radius:10px;padding:6px 16px;text-align:center;line-height:1.35;color:#f4ebd0;white-space:nowrap;animation:bn 2.4s ease both;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.6)}
+.bn b{display:block;font-size:15px;color:#e8a317}.bn small{font-size:11px;color:#c9b48a;font-style:italic}
+.tn{animation:tn .5s ease-out}.cf,.em{transform-box:fill-box;transform-origin:center;animation:fall 4s linear infinite}.em{animation-name:rise}
+</style>
+</head>
+<body>
+<div id="app">
+  <h1>El tonel de amontillado / The Cask of Amontillado</h1>
+  <div id="hud"></div>
+  <div id="st"></div>
+  <div id="tx"></div>
+  <div id="bt"></div>
+  <div id="lg"></div>
+</div>
+
+<script>
+let S,seen=[],lastK=null;try{seen=JSON.parse(localStorage.getItem('tonel_v5')||'[]')}catch(e){}
+const $=i=>document.getElementById(i);
+const R=s=>{
+  const sc=S?S.sc:null;
+  const k=sc+(sc=='f_lamp'?S.ls:'')+(sc=='f_event'?S.evIndex:'')+(sc=='ct'?S.ph+(S.ph=='m'?S.m:''):'');
+  const ch=k!==lastK;lastK=k;
+  const b=ch?bn():null,ak=ambK();
+  $('st').innerHTML='<svg viewBox="0 0 360 330"'+(ch?' class="sin"':'')+'>'+s+(ak?amb(ak):'')+'</svg>'+(ch?'<div class="cv"></div>'+(b?`<div class="bn"><b>${b[0]} ${b[1]}</b><small>${b[2]}</small></div>`:''):'');
+  if(ch){const t=$('tx');t.classList.remove('tn');void t.offsetWidth;t.classList.add('tn')}
+};
+const T=t=>{$('tx').innerHTML=t};
+const B=a=>{const b=$('bt');b.innerHTML='';a.forEach(([l,f,d])=>{const e=document.createElement('button');e.textContent=l;e.disabled=!!d;e.onclick=f;b.appendChild(e)})};
+const hs=(id,x)=>`<g class="h" onclick="H('${id}')">${x}</g>`;
+const H=id=>{const a=A[S.sc];a&&a(id)};
+
+const F_prof={h:'#111',m:1,c:'#8e1b1b',v:'#d4a017'};
+const C={
+  card:['Reconocer a Fortunato / Find Fortunato','Plaza: búscalo con traje de bufón / Look for the jester'],
+  luc:['Lucresi, rival en vinos / Wine rival Lucresi','Plaza: cartel de cata / Wine contest banner'],
+  sirv:['Criados ausentes / Servants away','Palazzo: nota en pared / Note on wall'],
+  plano:['Plano de catacumbas / Catacomb map','Palazzo: sobre la mesa / On table'],
+  esc:['Escudo Montresor / Montresor crest','Palazzo: cuadro nobiliario / Crest painting'],
+  sig:['Pala de albañil / Trowel sign','Cripta: seña masónica / Masonic sign'],
+  ton:['Tonel verdadero / True cask','Cripta profunda / Deep crypt']
+};
+
+const END={
+  sos:['Bufón descubierto / Jester escaped','Fortunato descubre la trampa y huye gritando. La guardia llama a tu puerta. No hubo impunidad.','#3a1111','🚨'],
+  sp:['Sin herramientas / No tools','Llegas al nicho sin pala ni forma de sellarlo. Queda en ridículo tu venganza.','#1d2a3a','🧱'],
+  pi:['Bufón piadoso / Merciful jester','Sueltas la piedra y lo liberas. En el próximo carnaval todos sabrán tu secreto.','#2c2a14','🎭'],
+  ca:['Final clásico / Classic ending','Colocas la última piedra. Solo se oye el tintineo de unos cascabeles. ¡Requiescat in pace!','#1a1a2a','🔔'],
+  ve:['Final perfecto / Perfect ending','Nadie vio nada, los criados se fueron y el amontillado era real. Brindas a solas.','#2a1a05','🍷'],
+  f_free:['¡Libre bajo las estrellas! / Free under the stars!','Con ingenio, corazones y coronas saliste de la cripta. Montresor vuelve con las piedras y solo halla cascabeles y un nicho vacío. Al amanecer, toda Venecia sabrá la verdad.','#14304a','🌅'],
+  enc:['Encerrado / Locked in','Fortunato lo supo todo desde el principio. En el fondo del nicho, quien oye alejarse los cascabeles eres tú. Requiescat in pace.','#1a1015','⛓️'],
+  f_lost:['Perdido en la oscuridad / Lost in the dark','La linterna se apagó antes de hallar la salida. Los cascabeles se perdieron entre los arcos... y Montresor sellará el nicho al volver.','#101018','🕯️'],
+  f_dead:['Atrapado en el muro / Trapped in the wall', 'Confiaste demasiado en las falsas promesas de amontillado de Montresor. Te encadenó al fondo del nicho y te construyó una tumba eterna de piedra.','#3a1111','🪦']
+};
+
+// Character drawing helpers
+const FC=`<circle cx="-2.8" cy="1" r="1" fill="#222"/><circle cx="2.8" cy="1" r="1" fill="#222"/><path d="M-3 4.6Q0 7.6 3 4.6" stroke="#8e1b1b" fill="none" stroke-width=".9"/><circle cx="-5" cy="3.6" r="1.4" fill="#e88" opacity=".6"/><circle cx="5" cy="3.6" r="1.4" fill="#e88" opacity=".6"/>`;
+const CL=[['#c0392b','#f4ebd0','#c0392b'],['#2f9e44','#f2d64b','#2f9e44'],['#1e6fd6','#f08a24','#f08a24'],['#222','#f4ebd0','#d63a8a'],['#18a6a6','#e8e8e8','#6b3fa0']];
+const jest=(a,b,h)=>`<path d="M-8 12L-15 24M8 12L15 24" stroke="${a}" stroke-width="4.5" stroke-linecap="round"/><circle cx="-15" cy="25" r="2.4" fill="#f8e1c4"/><circle cx="15" cy="25" r="2.4" fill="#f8e1c4"/><path d="M-10 33L-8 8H8L10 33Z" fill="${a}" stroke="#0006"/><path d="M-10 33L-8 8H0L-2 20Z" fill="${b}"/><path d="M0 8H8L10 33H1Z" fill="${b}" opacity=".5"/><rect x="-8" y="33" width="7" height="3.5" rx="1.7" fill="#111"/><rect x="1" y="33" width="7" height="3.5" rx="1.7" fill="#111"/><path d="M-10 8Q0 15 10 8L8 5H-8Z" fill="#f4ebd0" stroke="#0004"/><circle cy="2" r="7.5" fill="#f8e1c4" stroke="#0005" stroke-width=".6"/><path d="M-9 -1L-15-14-5-6 0-18 5-6 15-14 9-1Z" fill="${h}"/><circle cx="-15" cy="-14" r="2.5" fill="#c00"/><circle cy="-18" r="2.5" fill="#c00"/><circle cx="15" cy="-14" r="2.5" fill="#c00"/>${FC}`;
+function P(x,y,k,s,o){
+  let g=`<g transform="translate(${x},${y}) scale(${s})"><ellipse cy="36" rx="14" ry="3" fill="#000" opacity=".35"/><rect x="-14" y="-18" width="28" height="52" fill="transparent"/>`;
+  const F2=`<g transform="translate(0,1)">${FC}</g>`;
+  if(k=='j')g+=jest('#7b2d8e','#e8a317',(typeof S!='undefined'&&S&&S.hat&&HATC[S.hat])||'#e8a317');
+  else if(k.length==2&&k[0]=='c')g+=jest(...CL[+k[1]]);
+  else if(k=='np1')g+=`<path d="M-8 12L-14 26M8 12L14 26" stroke="#1e3f8a" stroke-width="4.5" stroke-linecap="round"/><rect x="-9" y="8" width="18" height="24" rx="3" fill="#1e3f8a" stroke="#0006"/><path d="M-9 8L0 22 9 8Z" fill="#c9a063"/><rect x="-8" y="32" width="6" height="3" fill="#111"/><rect x="2" y="32" width="6" height="3" fill="#111"/><circle cy="3" r="7.5" fill="#f8e1c4"/><rect x="-8" y="-1" width="16" height="5" rx="2" fill="#111"/><circle cx="-3" cy="1.6" r="1.2" fill="#fff"/><circle cx="3" cy="1.6" r="1.2" fill="#fff"/><path d="M-8-3Q0-12 8-3Z" fill="#111"/><path d="M-3 7Q0 9 3 7" stroke="#8e1b1b" fill="none"/>`;
+  else if(k=='np2')g+=`<path d="M-10 32L-12 10H12L10 32Z" fill="#2f9e44" stroke="#0006"/><path d="M-12 10Q0 18 12 10" fill="#f4ebd0"/><circle cy="3" r="7.5" fill="#f8e1c4"/><path d="M-6-4L0-16 6-4Z" fill="#e0553f"/><path d="M0-6Q10-22 4-26" stroke="#f4ebd0" stroke-width="2" fill="none"/>${F2}`;
+  else if(k=='np3')g+=`<path d="M-11 33L-8 6H8L11 33Z" fill="#5a3a1e" stroke="#0006"/><path d="M-8 20H8" stroke="#c9a063" stroke-width="2"/><circle cy="4" r="7.5" fill="#f8e1c4"/><path d="M-10-3Q0-14 10-3L8 8H-8Z" fill="#3a2210"/><circle cy="4" r="6" fill="#f8e1c4"/>${F2}`;
+  else g+=`<path d="M-8 12L-14 26M8 12L14 26" stroke="#1e1815" stroke-width="4.5" stroke-linecap="round"/><rect x="-9" y="8" width="18" height="24" rx="3" fill="#1e1815"/><rect x="-5" y="9" width="10" height="22" fill="${o.v}"/><path d="M-3 9H3L0 16Z" fill="${o.c}"/><circle cy="3" r="7.5" fill="#f8e1c4"/><rect x="-8.5" y="-13" width="17" height="13" fill="${o.h}"/><rect x="-11.5" y="-1" width="23" height="3" fill="${o.h}"/><circle cx="3" cy="3" r="3" fill="none" stroke="#d4a017" stroke-width="1.2"/>${F2}`;
+  return g+'</g>';
+}
+
+const tx=(x,y,t,sz,c,w)=>`<text x="${x}" y="${y}" text-anchor="middle" font-size="${sz}" fill="${c}"${w?' font-weight="700"':''}>${t}</text>`;
+
+function card(x,nm,ls,k,id){
+  let g=`<g transform="translate(${x},12)"><rect width="150" height="286" rx="12" fill="#241a14" stroke="#c9a063" stroke-width="3" filter="drop-shadow(0px 4px 8px rgba(0,0,0,0.5))"/>`;
+  g+=`<rect x="10" y="10" width="130" height="170" rx="8" fill="#150f0c" stroke="#5c4028" stroke-width="1"/>`;
+  g+=P(75,95,k,3.4,F_prof);
+  g+=tx(75,208,nm,16,'#f4ebd0',1);
+  ls.forEach((l,i)=>g+=tx(75,228+i*15,l,10,'#c9b48a'));
+  if(id){g+=tx(75,272,'👆 Toca para jugar',10,'#e8a317',1);return hs(id,g+'</g>')}
+  return g+'</g>';
+}
+
+function hud(){
+  if(S.char === 'montresor'){
+    $('hud').innerHTML=`<span>🔎 Pistas: ${S.cl.size}/7</span><span>👁 Sospecha: ${'●'.repeat(S.su)}${'○'.repeat(3-S.su)}</span><span>🔦 ${S.it.t?'✓':'–'} 🧱 ${S.it.p?'✓':'–'}</span><button onclick="nb()">📓 Pistas</button>`;
+  } else if(!S.char){$('hud').innerHTML=''}
+  else {
+    const L=Math.max(0,S.lives||0);
+    $('hud').innerHTML=`<span>❤️ ${'❤️'.repeat(L)}${'🖤'.repeat(3-L)}</span><span>👑 ${S.crowns||0}/5</span>${S.bat!=null?`<span>🔦 ${S.bat}s</span>`:''}<span>🏁 ≥2❤️ y ≥5👑</span>`;
+  }
+}
+
+function nb(){
+  const l=$('lg');
+  if(l.style.display=='block'){l.style.display='none';return}
+  l.innerHTML='<b>📓 Cuaderno de Pistas / Clues Journal</b><br><br>'+Object.keys(C).map(k=>S.cl.has(k)?`✅ <b>${C[k][0]}</b><br><small>${S.det[k]}</small>`:`❔ <i>${C[k][0]}</i><br><small>${C[k][1]}</small>`).join('<br><br>');
+  l.style.display='block';
+}
+
+function cl(k,m){S.cl.add(k);S.det[k]=m;hud();T(`🔎 <b>¡Pista descubierta!</b><br>${m}`)}
+function sus(m){if(S.su<3)S.su++;hud();if(S.su>=3&&!S.trap){S.trap=1;T(`${m} <span style="color:#e0553f"><b>¡Sospecha máxima!</b></span> Fortunato ya no se fía de ti, pero sigues adelante... Algo saldrá mal al final.`);return 0}T(`${m} <span style="color:#e0553f"><b>Sospecha: ${S.su}/3.</b></span>`);return 0}
+const rn=(i,m)=>Math.floor((((Math.sin(i*12.9898+S.sd*78.233)*43758.5453)%1)+1)%1*m);
+const nm=['izquierda','centro','derecha'];
+
+function intro(){
+  clearInterval(RT);clearInterval(WT);clearInterval(LT);
+  S={char:null,cl:new Set(),det:{},it:{t:0,p:0},su:0,sd:Math.random()*100,fi:Math.floor(Math.random()*24),path:[0,1,2].map(()=>Math.floor(Math.random()*3)),so:[0,1,2].sort(()=>Math.random()-.5),w:0,m:0,row:0,sc:'intro'};
+  hud();$('lg').style.display='none';
+  R('<rect width="360" height="330" fill="#16100c"/>'+card(15,'FORTUNATO',['Bufón del carnaval','Gorro cascabeles','Traje rombos'],'j','cF')+card(195,'MONTRESOR',['Burgués de clase alta','Sombrero copa','Monóculo'],'f','cM'));
+  T('👆 <i>Toca la imagen de un personaje para empezar.</i><br><br><b>Elige tu personaje / Choose your character:</b><br><br>🇪🇸 <b>Montresor (Clásico):</b> Vengarte de Fortunato, busca pistas en la plaza y el palazzo, desciende a las catacumbas y séllalo.<br><br>🇬🇧 <b>Fortunato (Modo Historia Interactiva + Supervivencia):</b> ¡Vistete para el carnaval, esquiva gente en las calles de Venecia, reúne coronas y sobrevive a los engaños de Montresor!');
+  B([
+    ['🇪🇸 Jugar como Montresor (Clásico)', ()=>setChar('montresor')],
+    ['🎭 Jugar como Fortunato (Historia + Supervivencia)', ()=>setChar('fortunato')]
+  ]);
+}
+
+function setChar(c){
+  S.char=c;
+  if(c==='montresor'){introMontresor();}
+  else{introFortunatoStory();0}
+}
+
+// ---------------- MONTRESOR PATH ----------------
+function introMontresor(){
+  S.sc='in';hud();
+  R('<rect width="360" height="330" fill="#16100c"/>'+card(15,'FORTUNATO',['Bufón del carnaval','Gorro cascabeles','Traje rombos'],'j')+card(195,'MONTRESOR',['Burgués orgulloso','Sombrero copa','Monóculo'],'f'));
+  T('<b>Carnaval en Venecia.</b><br>Juraste venganza contra Fortunato. Encuéntralo en la plaza (ahora con personajes claramente diferenciados por trajes y colores), reúne las <b>7 pistas</b> y castígalo.');
+  B([['Comenzar búsqueda',plaza]]);
+}
+
+function plaza(){
+  S.sc='pl';S.found=0;
+  let s=bgCarn();
+  for(let i=0;i<24;i++){
+    const x=36+(i%6)*57+((i*37)%13)-6,y=62+Math.floor(i/6)*55+((i*53)%9)-4;
+    let k='np1',o=F_prof;
+    if(i==S.fi){
+      k='j'; // Fortunato is distinctive with purple/gold jester suit and bell hat
+    } else {
+      const type=rn(i,8);k=type<3?['np1','np2','np3'][type]:'c'+(type-3);
+    }
+    s+=hs('f'+i,P(x,y,k,1.05,o));
+  }
+  s+='<rect x="8" y="260" width="154" height="64" rx="8" fill="#241a14" stroke="#c9a063" stroke-width="2"/>'+P(36,292,'j',1.2,F_prof)+tx(105,282,'BUSCA AL BUFÓN',10.5,'#f4ebd0',1)+tx(105,298,'Fortunato',12,'#e8a317',1)+tx(105,312,'(traje morado y cascabeles)',7.5,'#c9b48a');
+  s+=hs('pos','<rect x="218" y="260" width="134" height="64" rx="6" fill="#241a14" stroke="#c9a063" stroke-width="2"/>'+tx(285,283,'LUCRESI',14,'#e0553f',1)+tx(285,300,'Rivales en vino',9.5,'#f4ebd0')+tx(285,314,'🍷 Toca cartel',9,'#c9b48a'));
+  R(s);
+  T('<b>Plaza de carnaval:</b> ¡Hay bufones de todos los colores! Busca al de <b>traje morado y dorado</b> con cascabeles rojos, o toca el cartel de Lucresi.');
+  B([]);
+}
+
+const A={
+  intro:id=>{if(id=='cM')setChar('montresor');else if(id=='cF')setChar('fortunato')},
+  mu:()=>{if(S.row<10)hil()},
+  pl:id=>{
+    if(id=='pos'){cl('luc','Lucresi es su rival en vinos.');return}
+    const i=+id.slice(1);if(S.found){if(i==S.fi)dialogo();return}
+    if(i==S.fi){S.found=1;cl('card','¡Fortunato encontrado! Tócalo de nuevo para acercarte.');B([['Acercarse a Fortunato',dialogo]])}
+    else sus('Ese no es Fortunato: es otro enmascarado.')
+  },
+  pz:id=>{
+    const m={
+      t:()=>{S.it.t=2;hud();T('Has tomado antorchas.')},
+      pa:()=>{S.it.p=1;hud();T('Has guardado la pala de albañil.')},
+      n:()=>cl('sirv','Nota: «Nos fuimos al carnaval».'),
+      pl:()=>cl('plano','Catacumbas: 1.º '+nm[S.path[0]]+', 2.º '+nm[S.path[1]]+', 3.º '+nm[S.path[2]]+'.'),
+      es:()=>cl('esc','Escudo: pie humano aplastando serpiente.')
+    };
+    if(id=='door'){descend();return}m[id]&&m[id]();if(id=='n'||id=='pl'){docView(id);return}pzd();
+  },
+  ct:id=>{
+    const p=S.ph;
+    if(p=='w'){
+      const ok=S.w==0?0:2;
+      if(id=='b'+ok){
+        if(S.w==0){S.w=1;wine('Brindan. Fortunato pide De Grâve.')}
+        else arms()
+      } else sus('Esa botella no es la correcta.')
+    }
+    else if(p=='a'){
+      if(S.so[+id[1]]==0){T('Fortunato asiente. Falta el lema.');S.ph='x';B(['Memento mori','Nemo me impune lacessit','Veni, vidi, vici'].sort(()=>Math.random()-.5).map(l=>[l,()=>{if(l[0]=='N'){sign()}else sus('Ese no es el lema.')}]))}
+      else sus('Escudo incorrecto.')
+    }
+    else if(p=='m'){
+      if(+id[1]==S.path[S.m]){S.m++;if(S.m==3)deep();else maze()}
+      else sus('Te desviaste en los oscuros arcos.')
+    }
+    else if(p=='d'){
+      if(id=='nic')nicho();else if(id=='o')T('Muros de huesos apilados.');
+      else if(id=='ton')cl('ton','Tonel de Amontillado hallado.')
+    }
+    else if(p=='n'){
+      if(id=='ch'&&!S.ch){
+        if(S.trap){trapEnd();return}
+        S.ch=1;
+        T('¡Fortunato encadenado!');
+        B([['Tomar piedras y mortero',muro]]);
+      }
+    }
+  }
+};
+
+function dialogo(){
+  S.sc='dl';
+  R(bgVenice()+P(95,150,'f',4,F_prof)+P(265,150,'j',4,0)+tx(95,290,'Montresor',13,'#f4ebd0')+tx(265,290,'Fortunato',13,'#f4ebd0'));
+  T('Fortunato te saluda ebrio. Le hablas del amontillado. ¿Qué le dices?');
+  const go=m=>{T(m);B([['Ir al palazzo',palazzo]])};
+  B([
+    ['«Ven ya a mi bodega, es una orden.»', ()=>sus('Frunce el ceño con desconfianza.')],
+    [S.cl.has('luc')?'«Mejor se lo pregunto a Lucresi…»':'(Falta pista Lucresi)', ()=>go('«¡Lucresi es un ignorante! ¡Vamos!»'),!S.cl.has('luc')],
+    ['«Estás resfriado; las criptas son húmedas.»', ()=>go('«¡Un catarro no es nada! ¡Vamos!»')]
+  ]);
+}
+
+function pzd(){
+  let s=bgHall();
+  s+=hs('es','<rect x="18" y="38" width="82" height="104" fill="#1e3f8a" stroke="#c9a063" stroke-width="4"/><ellipse cx="59" cy="80" rx="14" ry="8" fill="#c9a063"/><rect x="54" y="52" width="10" height="28" fill="#c9a063"/><path d="M32 118Q46 100 59 118T86 118" stroke="#2f9e44" stroke-width="5" fill="none"/>');
+  if(!S.it.t)s+=hs('t','<g><rect x="112" y="160" width="6" height="34" fill="#5c4028"/><ellipse cx="115" cy="152" rx="9" ry="14" fill="#f08a24"/></g><g><rect x="252" y="160" width="6" height="34" fill="#5c4028"/><ellipse cx="255" cy="152" rx="9" ry="14" fill="#f08a24"/></g>');
+  s+='<rect x="130" y="215" width="130" height="12" fill="#5c4028"/><rect x="138" y="227" width="8" height="40" fill="#3a291c"/><rect x="244" y="227" width="8" height="40" fill="#3a291c"/>';
+  if(!S.it.p)s+=hs('pa','<rect x="176" y="180" width="6" height="34" fill="#8a5a2b" transform="rotate(-30 179 200)"/><path d="M190 195L214 205 200 216Z" fill="#b8bcc4"/>');
+  s+=hs('pl','<rect x="228" y="203" width="32" height="14" rx="6" fill="#e6d3a0" stroke="#8a6d3b" stroke-width="1.5"/>');
+  s+=hs('n','<rect x="280" y="55" width="54" height="66" fill="#f6ecd2" stroke="#8a6d3b" stroke-width="1.5"/><path d="M288 72h38M288 84h38M288 96h26" stroke="#5a4a38" stroke-width="2"/>');
+  s+=hs('door','<path d="M10 330V226Q10 182 60 182T110 226V330Z" fill="#0b0708" stroke="#8a5a2b" stroke-width="5"/>'+tx(60,300,'🚪 Toca: bajar',11,'#e8a317',1));
+  R(s);
+}
+
+function palazzo(){
+  S.sc='pz';pzd();
+  T('<b>Palazzo:</b> Explora y toca los objetos útiles. Toca la nota y el plano para leerlos. Cuando estés listo, <b>toca la puerta</b> de las catacumbas.');
+  B([['Bajar a las catacumbas', descend]])}
+
+function descend(){if(!S.it.t)T('Necesitas antorchas.');else wine('Descienden. Ofrécele Medoc.')}
+
+function wine(m){
+  S.sc='ct';S.ph='w';
+  let s=bgCrypt('#120c0a')+P(180,70,'j',2.4,0);
+  [['Medoc','#5a1a2a'],['Jerez','#a8691c'],['De Grâve','#7b8f3a'],['Amontillado','#c8932f']].forEach((b,i)=>{
+    const x=45+i*90;
+    s+=hs('b'+i,'<rect x="'+(x-14)+'" y="200" width="28" height="60" rx="4" fill="'+b[1]+'"/><rect x="'+(x-5)+'" y="176" width="10" height="26" fill="'+b[1]+'"/>'+tx(x,282,b[0],11,'#f4ebd0'))
+  });
+  R(s);T(m);B([]);
+}
+
+function arms(){
+  S.ph='a';
+  let s=bgCrypt('#120c0a');
+  const V=[['#1e3f8a','#c9a063','#2f9e44'],['#9b1c1c','#c9a063','#2f9e44'],['#1e3f8a','#2f9e44','#c9a063']];
+  S.so.forEach((v,i)=>{
+    const o=V[v],x=65+i*115;
+    s+=hs('s'+i,`<g transform="translate(${x},150) scale(.95)"><path d="M-42-60H42V10Q42 62 0 78-42 62-42 10Z" fill="${o[0]}" stroke="#c9a063" stroke-width="4"/><rect x="-5" y="-50" width="10" height="34" fill="${o[1]}"/><ellipse cy="-14" rx="14" ry="8" fill="${o[1]}"/><path d="M-30 46Q-15 28 0 46T30 46" stroke="${o[2]}" stroke-width="6" fill="none"/></g>`);
+  });
+  R(s);
+  T('«He olvidado vuestras armas», dice Fortunato. Toca el escudo correcto.');
+  B([]);
+}
+
+function sign(){
+  S.ph='s';S.sc='ct';
+  R(bgCrypt('#120c0a')+P(180,120,'j',4,0)+tx(180,300,'«¿No sois masón? Haced una seña.»',13,'#f4ebd0'));
+  T('Fortunato pide una señal de masón. ¿Qué haces?');
+  B([
+    ['Mostrar tu pala de albañil', ()=>{
+      S.cl.add('sig');S.det.sig='Pala de albañil como seña masónica.';hud();
+      T('Fortunato parpadea desconcertado. Avanzan.');
+      B([['Seguir avanzando',maze]])
+    },!S.it.p],
+    ['Hacer un gesto al azar', ()=>{if(!sus('Fortunato se ríe: «Eso no es nada».'))B([['Seguir avanzando',maze]])}]
+  ]);
+}
+
+function maze(){
+  S.sc='ct';S.ph='m';
+  let s=bgCrypt('#0d0a09');
+  [0,1,2].forEach(i=>{
+    const x=60+i*120;
+    s+=hs('a'+i,'<path d="M'+(x-42)+' 280V160Q'+(x-42)+' 90 '+x+' 90T'+(x+42)+' 160V280Z" fill="#050303" stroke="#5c4028" stroke-width="5"/>'+tx(x,305,nm[i],13,'#f4ebd0'))
+  });
+  R(s);T('Tramo '+(S.m+1)+' de 3: tres arcos. Elige el camino correcto.');
+  B([]);
+}
+
+function deep(){
+  S.ph='d';
+  R(bgCrypt('#080605')+hs('o','<rect x="10" y="90" width="110" height="200" fill="#d8ccb0"/><circle cx="40" cy="130" r="14" fill="#7a6e56"/><circle cx="85" cy="190" r="14" fill="#7a6e56"/><circle cx="50" cy="250" r="14" fill="#7a6e56"/>')+hs('ton','<ellipse cx="305" cy="260" rx="38" ry="46" fill="#2a1a0f"/><path d="M270 235H340M270 285H340" stroke="#5c4028" stroke-width="4"/><path d="M275 225L335 290M335 225L275 290" stroke="#bbb" stroke-width="1" opacity=".5"/>')+hs('nic','<path d="M150 290V150Q150 100 190 100T230 150V290Z" fill="#000" stroke="#5c4028" stroke-width="5"/>'+tx(190,310,'👆 nicho',11,'#e8a317',1)));
+  T('Cripta profunda. Explora las sombras y el tonel, o toca el nicho para entrar.');
+  B([['Entrar al nicho',nicho]]);
+}
+
+function nicho(){
+  S.ph='n';S.ch=0;
+  R(bgCrypt('#080605')+'<rect x="80" y="40" width="200" height="270" fill="#3a3a40"/>'+P(180,150,'j',3,0)+hs('ch','<rect x="85" y="180" width="30" height="14" rx="7" fill="none" stroke="#c9ccd2" stroke-width="5"/><rect x="245" y="180" width="30" height="14" rx="7" fill="none" stroke="#c9ccd2" stroke-width="5"/><path d="M115 187Q180 215 245 187" stroke="#c9ccd2" stroke-width="3" fill="none" stroke-dasharray="6 4"/>'));
+  T('Fortunato entra al nicho. Toca las argollas de hierro.');
+  B([]);
+}
+
+function muro(){
+  S.sc='mu';S.row=0;if(!S.it.p){end('sp');return}
+  mw();T('Comienzas a levantar el muro. Toca el muro para colocar cada hilera.');
+  B([['Colocar hilera',hil]]);
+}
+
+function mw(){
+  let s=bgCrypt('#080605')+'<rect x="60" y="40" width="240" height="270" fill="#1f1f24"/>'+P(180,110,'j',2.6,0);
+  for(let r=0;r<S.row;r++)s+='<rect x="60" y="'+(296-r*14)+'" width="240" height="14" fill="'+(r%2?'#7a7268':'#91897d')+'" stroke="#2b251f"/>';
+  R(s+hs('w','<rect x="60" y="40" width="240" height="270" fill="transparent"/>'));
+}
+
+function hil(){
+  S.row++;mw();const n=S.row;
+  if(n==4)T('Fila 4. Quejido profundo y cascabeles furiosos.');
+  else if(n==7)T('Fila 7. Alaridos desgarradores. Respondes gritando más fuerte.');
+  else if(n==10){
+    T('Fila 10. «¡Una excelente broma!... ¡Por el amor de Dios, Montresor!»');
+    B([
+      ['«Sí, por el amor de Dios.» Sellar', ()=>{S.row=11;mw();fin()}],
+      ['Liberarlo', ()=>end('pi')]
+    ]);
+    return;
+  }
+  else T('Fila '+n+' de 11.');
+}
+
+function fin(){end(S.cl.size==7?'ve':'ca')}
+
+
+// ---------------- FORTUNATO STORY & SURVIVAL PATH ----------------
+const HATC={gold:'#e8a317',purple:'#6b3fa0',red:'#c0392b'};
+let RT,WT,LT;
+const shuf=a=>a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(v=>v[1]);
+
+function bgVenice(){
+  let s='<defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1030"/><stop offset="1" stop-color="#5a2f4a"/></linearGradient></defs><rect width="360" height="330" fill="url(#sk)"/><circle cx="300" cy="50" r="30" fill="#f4ebd0" opacity=".15"/><circle cx="300" cy="50" r="19" fill="#f4ebd0"/>';
+  [[0,120,'#3b2536'],[70,150,'#4a2d3a'],[145,105,'#35243a'],[215,140,'#4f3040'],[290,115,'#3b2536']].forEach(([x,h,c])=>{
+    s+=`<rect x="${x}" y="${200-h}" width="72" height="${h}" fill="${c}"/>`;
+    for(let k=0;k<6;k++)s+=`<rect x="${x+10+(k%3)*20}" y="${210-h+Math.floor(k/3)*34}" width="9" height="15" rx="4" fill="#f0b84a" opacity=".85"/>`});
+  s+='<rect y="200" width="360" height="46" fill="#12233a"/><path d="M0 214H360M0 228H360" stroke="#3a6490" stroke-width="1.5" opacity=".5" stroke-dasharray="14 9"/><rect y="246" width="360" height="84" fill="#2a1f18"/>';
+  for(let i=0;i<6;i++)s+=`<path d="M0 ${258+i*14}H360" stroke="#1a120e" stroke-width="2"/>`;
+  s+='<path d="M0 10Q90 46 180 10Q270 46 360 10" stroke="#c9a063" fill="none" stroke-width="3"/>';
+  const fc=['#c0392b','#e8a317','#2f9e44','#7b2d8e'];
+  for(let i=0;i<8;i++){const x=22+i*44,y=10+18*Math.sin(Math.PI*(x%180)/180);s+=`<path d="M${x-7} ${y}L${x+7} ${y}L${x} ${y+16}Z" fill="${fc[i%4]}"/>`}
+  return s}
+
+function bgCrypt(c){
+  let s=`<rect width="360" height="330" fill="${c||'#1a1310'}"/>`;
+  for(let i=0;i<8;i++)for(let j=0;j<5;j++)s+=`<rect x="${j*80-(i%2)*40}" y="${i*42}" width="78" height="40" fill="#241a14" stroke="#0e0a08" stroke-width="2"/>`;
+  s+='<defs><radialGradient id="gl"><stop offset="0" stop-color="#f08a24" stop-opacity=".5"/><stop offset="1" stop-color="#f08a24" stop-opacity="0"/></radialGradient></defs>';
+  [40,320].forEach(x=>s+=`<circle cx="${x}" cy="95" r="60" fill="url(#gl)"/><rect x="${x-3}" y="96" width="6" height="32" fill="#5c4028"/><ellipse cx="${x}" cy="88" rx="8" ry="13" fill="#f08a24"/><ellipse cx="${x}" cy="91" rx="4" ry="7" fill="#ffd966"/>`);
+  s+='<rect y="285" width="360" height="45" fill="#0c0806"/>'+tx(70,316,'💀',18)+tx(300,318,'🦴',16)+tx(190,320,'🕸️',14);
+  return s}
+
+function hatSvg(t,x,y){
+  const c=HATC[t];let g=`<g transform="translate(${x},${y})">`;
+  if(t=='gold')g+=`<path d="M-24 0L-34-26-12-10 0-34 12-10 34-26 24 0Z" fill="${c}"/><circle cx="-34" cy="-26" r="4" fill="#c00"/><circle cy="-34" r="4" fill="#c00"/><circle cx="34" cy="-26" r="4" fill="#c00"/>`;
+  else if(t=='purple')g+=`<path d="M-26 0Q-30-30 0-30T26 0Z" fill="${c}"/><rect x="-28" y="-3" width="56" height="6" rx="3" fill="#d4a017"/><circle cx="20" cy="-22" r="5" fill="#e8a317"/>`;
+  else g+=`<path d="M-24 0L-18-24 0-12 18-24 24 0Z" fill="${c}"/><path d="M-6-14Q-20-46 0-48M6-14Q22-44 8-52" stroke="#f4ebd0" stroke-width="4" fill="none"/><path d="M-14 0L-8-12 0 0 8-12 14 0Z" fill="#111"/>`;
+  return g+'</g>'}
+
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const DN={hat:{gold:'Gorro dorado',purple:'Tocado morado',red:'Gorro de plumas'},suit:{rom:'Rombos morados',red:'Traje rojo',grn:'Traje verde'},shoe:{gold:'Zapatos dorados',red:'Zapatos rojos',blk:'Zapatos negros'}};
+const SUC={rom:['#7b2d8e','#e8a317'],red:['#c0392b','#f4ebd0'],grn:['#2f9e44','#f2d64b']};
+const SHC={gold:'#e8a317',red:'#c0392b',blk:'#2a2a2a'};
+const SL={hat:'GORRO',suit:'TRAJE',shoe:'ZAPATOS'};
+function ico(sl,t,x,y,sc){
+  let g=`<g transform="translate(${x},${y}) scale(${sc})">`;
+  if(sl=='hat')g+=hatSvg(t,0,0);
+  else if(sl=='suit'){const[a,b]=SUC[t];g+=`<path d="M-14-12L-7-22H7L14-12L9 20H-9Z" fill="${a}" stroke="#0006"/><path d="M-14-12L-7-22H0L-3 20H-9Z" fill="${b}"/>`}
+  else g+=`<path d="M-14 6Q-14-6-4-6H4V4Q10 4 15-4Q18 8 11 10H-12Z" fill="${SHC[t]}" stroke="#0006"/>`;
+  return g+'</g>'}
+function dressFig(x,y,s,e){
+  const su=e.suit&&SUC[e.suit];
+  let g=`<g transform="translate(${x},${y}) scale(${s})"><ellipse cy="36" rx="16" ry="3" fill="#000" opacity=".35"/><g class="${S.fx?'an f_'+S.fx.t:''}"><path d="M-8 12L-15 24M8 12L15 24" stroke="${su?su[0]:'#f8e1c4'}" stroke-width="4.5" stroke-linecap="round"/><circle cx="-15" cy="25" r="2.4" fill="#f8e1c4"/><circle cx="15" cy="25" r="2.4" fill="#f8e1c4"/><rect x="-8" y="24" width="6" height="10" fill="#f8e1c4"/><rect x="2" y="24" width="6" height="10" fill="#f8e1c4"/>`;
+  if(e.shoe){const c=SHC[e.shoe];g+=`<rect x="-9" y="32" width="8" height="4" rx="2" fill="${c}"/><rect x="1" y="32" width="8" height="4" rx="2" fill="${c}"/><circle cx="-10" cy="32" r="1.8" fill="${c}"/><circle cx="10" cy="32" r="1.8" fill="${c}"/>`}
+  g+=su?`<path d="M-10 33L-8 8H8L10 33Z" fill="${su[0]}" stroke="#0006"/><path d="M-10 33L-8 8H0L-2 20Z" fill="${su[1]}"/><path d="M-10 8Q0 15 10 8L8 5H-8Z" fill="#f4ebd0"/>`:`<path d="M-9 30L-8 8H8L9 30Z" fill="#f8e1c4"/><rect x="-9" y="22" width="18" height="8" fill="#e8e0d0" stroke="#0004" stroke-width=".5"/>`;
+  g+=`<circle cy="2" r="7.5" fill="#f8e1c4" stroke="#0005" stroke-width=".6"/>${FC}`;
+  if(e.hat)g+=`<g transform="translate(0,-2) scale(.5)">${hatSvg(e.hat,0,0)}</g>`;
+  return g+'</g></g>'}
+function dressScene(){
+  const r=S.req,e=S.eq;
+  let s='<rect width="360" height="330" fill="#241428"/><rect width="360" height="30" fill="#3a1f3f"/><ellipse cx="215" cy="150" rx="86" ry="118" fill="#1a0f1e" stroke="#c9a063" stroke-width="5"/><ellipse cx="215" cy="150" rx="75" ry="107" fill="#3a2a48" opacity=".5"/>'+tx(180,20,'Cámara de Vestir · arrastra la ropa al maniquí',11,'#e8a317',1);
+  s+='<rect x="8" y="38" width="118" height="190" rx="6" fill="#e6d2a2" stroke="#8a6d3b" stroke-width="2"/>'+tx(67,54,'📜 MODELO',10,'#7a1c1c',1);
+  ['hat','suit','shoe'].forEach((sl,i)=>{const y0=60+i*56;s+=ico(sl,r[sl],28,y0+34,.55)+tx(86,y0+22,SL[sl],8,'#7a5a2b',1)+tx(86,y0+36,DN[sl][r[sl]],8,'#2a1a10')});
+  s+=dressFig(215,128,3.4,e);
+  if(S.fx){const f=S.fx.t,n=f=='lucky'?10:f=='bad'?3:6;for(let i=0;i<n;i++)s+=`<g class="an sp" style="animation-delay:${i*.07}s"><text x="${165+Math.random()*100}" y="${90+Math.random()*130}" font-size="${f=='lucky'?16:13}" text-anchor="middle">${f=='lucky'?'👑':f=='bad'?'💢':'✨'}</text></g>`}
+  s+='<rect y="266" width="360" height="64" fill="#3a2518"/>';
+  const it=[];['hat','suit','shoe'].forEach(sl=>Object.keys(DN[sl]).forEach(t=>it.push([sl,t])));
+  if(S.tray)it.sort((a,b)=>S.tray.indexOf(a[0]+':'+a[1])-S.tray.indexOf(b[0]+':'+b[1]));
+  it.forEach(([sl,t],i)=>{const x=24+i*39,on=e[sl]==t;s+=`<g data-k="${sl}:${t}"><rect x="${x-18}" y="270" width="36" height="52" rx="5" fill="#241a14" stroke="${on?'#e8a317':'#5c4028'}" stroke-width="${on?3:1}"/>${ico(sl,t,x,sl=='hat'?312:298,sl=='hat'?.5:.6)}</g>`});
+  R(s);
+  const sv=$('st').firstChild;sv.style.touchAction='none';
+  S.fx=null;const pt=ev=>{const b=sv.getBoundingClientRect();return[(ev.clientX-b.left)*360/b.width,(ev.clientY-b.top)*330/b.height]};
+  sv.onpointerdown=ev=>{const g=ev.target.closest('[data-k]');if(!g)return;S.dg={g,k:g.dataset.k,p:pt(ev),mv:0};sv.setPointerCapture(ev.pointerId);g.style.opacity=.8};
+  sv.onpointermove=ev=>{const d=S.dg;if(!d)return;const q=pt(ev);d.mv=Math.hypot(q[0]-d.p[0],q[1]-d.p[1]);d.g.setAttribute('transform',`translate(${q[0]-d.p[0]},${q[1]-d.p[1]})`)};
+  sv.onpointerup=ev=>{const d=S.dg;if(!d)return;S.dg=null;const q=pt(ev),[sl,t]=d.k.split(':');
+    if(d.mv<8||(q[0]>130&&q[0]<300&&q[1]>50&&q[1]<262)){dressTry(sl,t)}else{d.g.removeAttribute('transform');d.g.style.opacity=1}};
+}
+function dressTry(sl,t){
+  if(S.eq[sl]==t){S.fx={t:'ok'};dressScene();return}
+  const r=Math.random();
+  if(r<.15){S.fx={t:'bad'};dressScene();T(rnd(['🧵 <b>¡Se atascó!</b> La prenda se enreda y no entra. Inténtalo de nuevo.','💥 <b>¡Rasgón!</b> La tela se resiste. Prueba otra vez.','🪝 <b>La prenda se enganchó en un clavo.</b> Reintenta.']));return}
+  S.eq[sl]=t;
+  if(r>.9&&!S.lk){S.lk=1;S.crowns++;S.fx={t:'lucky'};hud();dressScene();T('👑 <b>¡Golpe de suerte!</b> Encuentras una corona de oro cosida en el forro. +1 corona.');return}
+  S.fx={t:'ok'};dressScene();
+  T(rnd(['✨ Te queda de maravilla.','🔔 Los cascabeles tintinean al ajustarse.','🪞 El espejo aprueba la elección.','👌 Un poco justo, pero luce bien.']));
+}
+function introFortunatoStory(){
+  S.sc='f_dress';S.lives=3;S.crowns=0;S.evIndex=0;S.hat=0;S.wineDone=0;S.dp=0;S.eq={};S.lk=0;S.fx=null;S.tray=shuf(['hat','suit','shoe'].flatMap(sl=>Object.keys(DN[sl]).map(t=>sl+':'+t)));
+  S.req={hat:rnd(['gold','purple','red']),suit:rnd(['rom','red','grn']),shoe:rnd(['gold','red','blk'])};
+  hud();dressScene();
+  T('<b>Acto I: El Disfraz de Carnaval</b><br>Mira la tarjeta <b>MODELO</b> y <b>arrastra</b> (o toca) cada prenda hasta el maniquí. Si sales mal vestido perderás ❤️.');
+  B([['✔ Estoy listo',confirmDress]]);
+}
+function confirmDress(){
+  const bad=['hat','suit','shoe'].filter(k=>S.eq[k]!=S.req[k]);
+  if(!bad.length){chooseHat(S.req.hat);return}
+  const first=!S.dp;S.dp=1;
+  if(first){S.lives--;hud();if(S.lives<=0){end('f_dead');return}}
+  T(`❌ No coincide con el modelo: <b>${bad.map(k=>SL[k].toLowerCase()).join(', ')}</b>.${first?' Pierdes 1 ❤️ por salir mal vestido.':''} Corrígelo e inténtalo otra vez.`);
+}
+
+function chooseHat(type){
+  S.hat = type;
+  S.sc='f_street';
+  veniceStreet(0, "Te has vestido impecablemente. Ahora sales a las animadas y repletas calles de Venecia rumbo a la fiesta, ¡pero debes abrirte paso esquivando a la gente y obstáculos!");
+}
+
+function veniceStreet(step, msg){
+  S.streetStep = step;
+  if(step >= 3){
+    plazaRun();
+    return;
+  }
+
+  let obstacles = [
+    ["🍷 Un grupo de fiesteros ebrios te bloquea el paso", "Empujar con elegancia y seguir", "Gritarles y discutir"],
+    ["🎭 Una comparsa de máscaras bailando en círculo", "Rivalizar con un baile gracioso", "Intentar cruzar a empujones"],
+    [" torch 🏮 Un vendedor despistado con antorchas humeantes", "Rodearlo por el callejón angosto", "Pasar rozando velozmente"]
+  ];
+
+  let obs = obstacles[step];
+  R(bgVenice()+P(180,238,'j',2.6,0)+tx(180,45,'Calle de Venecia (Paso '+(step+1)+'/3)',14,'#c9a063',1));
+  T(`<b>${obs[0]}</b><br>${msg}`);
+  B([
+    ['✨ '+obs[1], ()=>advanceStreet(true)],
+    ['⚠️ '+obs[2], ()=>advanceStreet(false)]
+  ]);
+}
+
+function advanceStreet(goodChoice){
+  if(goodChoice){
+    veniceStreet(S.streetStep + 1, "¡Excelente maniobra! Te abriste paso con gracia veneciana sin perder el estilo ni la paciencia.");
+  } else {
+    S.lives = (S.lives || 3) - 1;
+    hud();
+    if(S.lives <= 0){
+      end('f_dead');
+      return;
+    }
+    veniceStreet(S.streetStep + 1, `¡Tropiezo y discusión! Ganaste mala fama y perdiste 1 vida (❤️ Restantes: ${S.lives}).`);
+  }
+}
+
+const FORTUNATO_EVENTS = [
+  {
+    text: "Llegas a la gran plaza y te encuentras con Montresor. Te dice sonriente: «¡Fortunato! Qué alegría. Tengo un magnífico tonel de amontillado. Ven a mi bodega a probarlo».<br><i>Montresor te invita amablemente a su cueva. ¿Confías en él?</i>",
+    truth: "desconfiar",
+    lieMsg: "¡Confiaste en su falsa amabilidad! Montresor te da una copa de vino con sedantes.",
+    truthMsg: "¡Desconfiaste con razón! Sospechas de su repentina gentileza y encuentras una corona de oro oculta."
+  },
+  {
+    text: "Montresor asegura: «He dejado a todos los criados descansando en casa celebrando el carnaval. Nadie vigila el palazzo».<br><i>¿Crees que los criados realmente se fueron?</i>",
+    truth: "desconfiar",
+    lieMsg: "¡Confiaste ciegamente! Los criados ya se habían marchado, pero Montresor te guía a una trampa sin testigos.",
+    truthMsg: "¡Excelente desconfianza! Averiguaste que el palazzo está solitario y ganas una corona de oro."
+  },
+  {
+    text: "Al descender por la oscura escalera de caracol, Montresor advierte: «La humedad es terrible, pero el vino te curará la tos».<br><i>¿Confías en su recomendación de beber Medoc?</i>",
+    truth: "confiar",
+    lieMsg: "¡Desconfiaste de su consejo y te negaste a beber! Tu garganta arde y pierdes lucidez.",
+    truthMsg: "¡Confiaste en el vino! El Medoc te reconforta y encuentras una valiosa corona antigua."
+  },
+  {
+    text: "Llegan a un nicho profundo rodeado de huesos. Montresor dice: «Mira al fondo, el amontillado está justo aquí entre las cadenas».<br><i>¿Confías en entrar al fondo del nicho?</i>",
+    truth: "desconfiar",
+    lieMsg: "¡Confiaste en su trampa mortal! Te adentras y te encadena instantáneamente a la pared.",
+    truthMsg: "¡Desconfiaste a tiempo! Viste las argollas ocultas y esquivaste la trampa, asegurando la tercera corona."
+  }
+];
+
+// ---- Minijuego: carrera a la plaza
+function setPl(){const e=$('pl');if(e){e.setAttribute('transform',`translate(${60+S.ln*120},297)`);e.style.opacity=S.cd>0?.5:1}}
+function plazaRun(){
+  S.sc='f_run';S.ln=1;S.ob=[];S.tk=0;S.cd=0;S.rc=0;S.rh=0;
+  let s=bgVenice()+'<rect y="110" width="360" height="220" fill="#2a1f18"/><path d="M120 110V330M240 110V330" stroke="#c9a063" stroke-width="2" stroke-dasharray="10 10" opacity=".5"/><g id="dy"></g><g id="pl">'+P(0,0,'j',1.5,0)+'</g>'+tx(180,100,'⛲ Plaza San Marco',12,'#e8a317',1);
+  [0,1,2].forEach(i=>s+=hs('l'+i,`<rect x="${i*120}" y="0" width="120" height="330" fill="transparent"/>`));
+  R(s);setPl();
+  T('<b>Minijuego: ¡Corre a la plaza!</b><br>Toca un carril para moverte. Esquiva a la gente (−❤️) y recoge las 👑 (máximo 4 en total).');
+  B([]);RT=setInterval(runTick,450);
+}
+A.f_run=id=>{S.ln=+id[1];setPl()};
+function runTick(){
+  S.tk++;S.cd--;S.ob.forEach(o=>o.r++);
+  S.ob.filter(o=>o.r==6&&o.l==S.ln).forEach(o=>{
+    if(o.t=='c'){S.crowns++;S.rc++}
+    else if(S.cd<=0){S.lives--;S.rh++;S.cd=2}});
+  S.ob=S.ob.filter(o=>o.r<6);
+  const ls=shuf([0,1,2]),cr=[3,11,19,27].includes(S.tk),st=cr?1:0;
+  if(cr)S.ob.push({l:ls[0],r:0,t:'c'});
+  if(S.tk<36&&Math.random()<.85){const n=Math.random()<.35?2:1;
+    ls.slice(st,st+n).forEach(l=>S.ob.push({l,r:0,t:'o',k:rnd(['np1','np2','np3','c0','c1','c2','c3','c4'])}))}
+  $('dy').innerHTML=S.ob.map(o=>{const x=60+o.l*120,y=135+o.r*27;return o.t=='c'?tx(x,y+8,'👑',16+o.r*3):P(x,y,o.k,.55+o.r*.1,0)}).join('');
+  setPl();hud();
+  if(S.lives<=0){clearInterval(RT);end('f_dead');return}
+  if(S.tk>=42){clearInterval(RT);S.sc='f_runend';
+    T(`<b>¡Llegaste a la plaza!</b><br>👑 Coronas recogidas: <b>${S.rc}/4</b> · 💔 Golpes: <b>${S.rh}</b>`);
+    B([['Buscar a Montresor',meetMontresor]])}
+}
+
+// ---- Minijuego: que no se derrame el vino
+function wineIntro(){
+  S.sc='f_wi';
+  R(bgCrypt()+P(105,200,'j',3.2,0)+P(255,200,'f',3.2,F_prof)+tx(180,48,'🍷 Montresor te ofrece una copa',13,'#e8a317',1));
+  T('<b>Minijuego: ¡No tires el vino!</b><br>Bajas la escalera con la copa de Medoc. Toca la <b>mitad izquierda o derecha</b> de la pantalla para equilibrarla. Cada 6 segundos firme = 👑. Si se derrama = −❤️.');
+  B([['🍷 Tomar la copa',wineGame]]);
+}
+function wineGame(){
+  S.sc='f_wine';S.wx=0;S.wv=0;S.wt=0;S.wsp=0;S.wineDone=1;
+  let s=bgCrypt('#140e0c')+P(75,200,'j',2.4,0)+'<rect x="40" y="26" width="280" height="8" rx="4" fill="#050302"/><rect id="pr" x="40" y="26" width="0" height="8" rx="4" fill="#d4a017"/><rect x="40" y="290" width="280" height="14" rx="7" fill="#050302" stroke="#5c4028"/><rect x="130" y="290" width="100" height="14" rx="7" fill="#2f9e44" opacity=".7"/><circle id="mk" cx="180" cy="297" r="9" fill="#e8a317"/>';
+  s+='<g id="gb" transform="translate(235,200)"><path d="M-34-60H34L27-12Q0 18-27-12Z" fill="#cfd8e6" opacity=".35" stroke="#cfd8e6" stroke-width="2"/><path d="M-30-38H30L26-12Q0 14-26-12Z" fill="#7a1530"/><rect x="-3" y="12" width="6" height="40" fill="#cfd8e6"/><ellipse cy="54" rx="26" ry="6" fill="#cfd8e6"/></g>'+tx(60,270,'👈 Toca',12,'#e8a317',1)+tx(300,270,'Toca 👉',12,'#e8a317',1);
+  s+=hs('L','<rect width="180" height="330" fill="transparent"/>')+hs('R','<rect x="180" width="180" height="330" fill="transparent"/>');
+  R(s);T('🍷 <b>Equilibra la copa.</b> Mantén la bolita dorada en la zona verde.');B([]);
+  WT=setInterval(wineTick,100);
+}
+A.f_wine=id=>{S.wv+=id=='L'?-.1:.1};
+function wineTick(){
+  S.wt++;S.wv+=(Math.random()-.5)*.06+S.wx*.012;S.wv*=.96;S.wx+=S.wv;
+  if(Math.abs(S.wx)>1){S.lives--;S.wsp=S.wt;S.wx=0;S.wv=0;hud();T('💦 <b>¡Se derrama el vino!</b> Pierdes 1 corazón.');
+    if(S.lives<=0){clearInterval(WT);end('f_dead');return}}
+  if(S.wt%60==0){if(S.wt-S.wsp>=60){S.crowns++;hud();T('👑 <b>Pulso firme.</b> +1 corona.')}else T('Sigue... equilibra la copa.')}
+  $('gb').setAttribute('transform',`translate(235,200) rotate(${S.wx*28})`);
+  $('mk').setAttribute('cx',180+S.wx*130);$('pr').setAttribute('width',280*S.wt/180);
+  if(S.wt>=180){clearInterval(WT);S.sc='f_wo';T(`<b>¡Llegaste abajo con la copa!</b><br>👑 ${S.crowns}/5 · ❤️ ${S.lives}/3`);B([['Seguir bajando',nextFortunatoEvent]])}
+}
+
+// ---- Escape: linterna
+const LSP=[[55,100],[305,95],[60,235],[300,245],[185,150],[180,255],[120,185],[250,185]];
+const LV={rojo:'#d63a3a',azul:'#3a7bd6',verde:'#3aa84a'};
+function lObj(o,i){
+  const g=o.c?`<rect x="${o.x-3}" y="${o.y-16}" width="6" height="30" fill="#8a8f98"/><circle cx="${o.x}" cy="${o.y-18}" r="9" fill="${LV[o.c]}" stroke="#fff" stroke-width="1.5"/><rect x="${o.x-14}" y="${o.y+12}" width="28" height="8" rx="3" fill="#3a3a40"/>`:tx(o.x,o.y+10,o.e,30);
+  return `<g id="o${i}">${g}</g>`}
+function fOutcome(){
+  if(S.lives<2||S.crowns<5){S.sc='f_x';R(bgCrypt()+P(180,170,'j',3,0)+tx(180,48,'SIN ESCAPATORIA',16,'#e0553f',1));
+    T(`<b>Montresor vuelve con las piedras.</b><br>Para escapar necesitabas <b>≥2 ❤️</b> y <b>≥5 👑</b>. Tienes ${S.lives}❤️ y ${S.crowns}👑.`);B([['Ver final',()=>end('f_dead')]]);return}
+  S.sc='f_esc';
+  R(bgCrypt()+P(180,160,'j',3.4,0)+tx(180,48,'¡LA CADENA CEDE!',16,'#e8a317',1)+tx(180,300,'❤️≥2 ✓   👑≥5 ✓',13,'#f4ebd0',1));
+  T('<b>¡Lo conseguiste!</b> Con tus corazones y coronas, un cascabel dorado te sirve de ganzúa y la cadena cede. Montresor fue por piedras: tienes poco tiempo y una linterna.<br><br><b>Arrastra el dedo para alumbrar</b>, toca lo que encuentres y vuelve a la superficie.');
+  B([['🔦 Encender la linterna',()=>lamp(0)]]);
+}
+function lamp(st){
+  clearInterval(LT);S.sc='f_lamp';S.ls=st;S.lx=180;S.ly=165;S.pl=0;S.lock=0;
+  if(st==0){S.bat=70;S.ord=shuf(Object.keys(LV));S.key=0}
+  const sp=shuf(LSP),mk=(id,e,c)=>{const q=sp.pop();return{id,e,c,x:q[0],y:q[1]}};
+  S.lo=st==0?[mk('scroll','📜'),mk('rat','🐀'),mk('rat','🐀')]:st==1?[...S.ord.map(c=>mk('lv_'+c,'',c)),mk('rat','🐀')]:[mk('key','🔑'),mk('rat','🐀'),{id:'door',e:'🚪',x:180,y:62}];
+  let s=bgCrypt(['#1a1310','#0f1519','#17100d'][st]);
+  if(st==1)[60,180,300].forEach(x=>s+=`<path d="M${x-40} 250V150Q${x-40} 100 ${x} 100T${x+40} 150V250Z" fill="#07090c" stroke="#3a3a40" stroke-width="4"/>`);
+  if(st==2)for(let i=0;i<6;i++)s+=`<rect x="${80+i*10}" y="${250-i*28}" width="${200-i*20}" height="28" fill="#2d2520" stroke="#0e0a08"/>`;
+  S.lo.forEach((o,i)=>s+=lObj(o,i));
+  s+='<defs><radialGradient id="lg"><stop offset=".5" stop-color="#000"/><stop offset="1" stop-color="#fff"/></radialGradient><mask id="lm"><rect width="360" height="330" fill="#fff"/><circle id="lc" cx="180" cy="165" r="72" fill="url(#lg)"/></mask></defs><rect width="360" height="330" fill="#000" opacity=".97" mask="url(#lm)"/><circle id="lw" cx="180" cy="165" r="72" fill="#ffcc66" opacity=".08" pointer-events="none"/>';
+  R(s);
+  const sv=$('st').firstChild;sv.style.touchAction='none';
+  const mv=e=>{const r=sv.getBoundingClientRect();S.lx=(e.clientX-r.left)*360/r.width;S.ly=(e.clientY-r.top)*330/r.height;['lc','lw'].forEach(i=>{const c=$(i);c.setAttribute('cx',S.lx);c.setAttribute('cy',S.ly)})};
+  sv.onpointermove=mv;sv.onpointerdown=e=>{mv(e);lampTap()};
+  T(['🔦 <b>Cripta profunda (1/3).</b> Busca una <b>pista</b> sobre el mecanismo de salida. Cuidado con las ratas.',`🔦 <b>Galería de arcos (2/3).</b> Hay tres palancas ocultas. Actívalas en el orden de la inscripción: <b>${S.ord.join(' → ')}</b>.`,'🔦 <b>Escalera final (3/3).</b> Encuentra la 🔑 llave y luego la 🚪 puerta de salida.'][st]);
+  B([]);hud();
+  LT=setInterval(()=>{S.bat--;hud();if(S.bat<=0){clearInterval(LT);end('f_lost')}},1000);
+}
+function lampPen(n,m){S.bat=Math.max(0,S.bat-n);hud();T(m);if(S.bat<=0){clearInterval(LT);end('f_lost')}}
+function lampTap(){
+  if(S.lock)return;
+  const i=S.lo.findIndex(o=>!o.d&&Math.hypot(o.x-S.lx,o.y-S.ly)<30);if(i<0)return;
+  const o=S.lo[i],hide=()=>{o.d=1;$('o'+i).style.display='none'};
+  if(o.id=='rat'){hide();lampPen(6,'🐀 ¡Una rata! La linterna parpadea. <b>−6 s</b>')}
+  else if(o.id=='scroll'){hide();S.lock=1;clearInterval(LT);T(`📜 <b>Inscripción:</b> «Para abrir la reja: <b>${S.ord.join(' → ')}</b>».`);B([['Seguir',()=>lamp(1)]])}
+  else if(o.id=='key'){hide();S.key=1;T('🔑 <b>¡Llave oxidada!</b> Ahora busca la puerta.')}
+  else if(o.id=='door'){
+    if(!S.key)T('🚪 Está cerrada con llave. Sigue buscando.');
+    else{S.lock=1;clearInterval(LT);end('f_free')}}
+  else if(o.c){
+    if(o.c==S.ord[S.pl]){o.d=1;S.pl++;$('o'+i).style.opacity=.35;
+      if(S.pl==3){S.lock=1;clearInterval(LT);T('⚙️ <b>¡Clac!</b> La reja se abre con un chirrido.');B([['Subir la escalera',()=>lamp(2)]])}
+      else T(`⚙️ Palanca ${o.c} activada (${S.pl}/3).`)}
+    else{S.pl=0;S.lo.forEach((q,j)=>{if(q.c){q.d=0;$('o'+j).style.opacity=1}});lampPen(8,'⚙️ Orden incorrecto: el mecanismo se reinicia. <b>−8 s</b>')}}
+}
+
+function meetMontresor(){
+  S.sc='f_intro';hud();
+  R(bgVenice()+P(105,205,'j',3.2,0)+P(255,205,'f',3.2,F_prof)+tx(180,45,'ENCUENTRO CON MONTRESOR',15,'#e8a317',1));
+  T('<b>Montresor te sonríe.</b> Comienza el juego psicológico.<br><br>• <b>Acertar</b> te da una <b>Corona 👑</b>. • <b>Equivocarte</b> te quita un <b>Corazón ❤️</b>.<br>• Habrá un minijuego del vino. Si terminas con <b>≥2 ❤️ y ≥5 👑</b>, podrás <b>escapar de la cripta</b>.');
+  B([['Comenzar dilemas',nextFortunatoEvent]]);
+}
+
+function nextFortunatoEvent(){
+  if(S.lives<=0){end('f_dead');return}
+  if(S.evIndex==2&&!S.wineDone){wineIntro();return}
+  if(S.evIndex>=FORTUNATO_EVENTS.length){fOutcome();return}
+  const ev=FORTUNATO_EVENTS[S.evIndex];S.sc='f_event';
+  R((S.evIndex<2?bgVenice()+mansion(6,214,.9):bgCrypt())+P(105,205,'j',3.2,0)+P(255,205,'f',3.2,F_prof)+tx(180,45,'Dilema '+(S.evIndex+1)+'/4',14,'#c9a063',1));
+  T(ev.text+'<br><br>'+FH[S.evIndex]);
+  B([['🛡️ Desconfiar (Distrust)',()=>resolveFortunatoChoice('desconfiar')],['🤝 Confiar (Trust)',()=>resolveFortunatoChoice('confiar')]]);
+}
+
+function resolveFortunatoChoice(c){
+  const ev=FORTUNATO_EVENTS[S.evIndex],bg=S.evIndex<2?bgVenice():bgCrypt();S.evIndex++;let m,ic;
+  if(c===ev.truth){S.crowns++;ic='👑';m=`✅ <b>${c=='desconfiar'?'¡Acertaste al desconfiar!':'¡Confiaste y acertaste!'}</b><br>${ev.truthMsg}<br><span style="color:#d4a017">👑 Coronas: ${S.crowns}/5</span>`}
+  else{S.lives--;ic='💔';m=`❌ <b>${c=='confiar'?'¡Error al confiar!':'¡Error al desconfiar!'}</b><br>${c=='confiar'?ev.lieMsg:'Era una propuesta genuina, pero tu paranoia te costó caro.'}<br><span style="color:#e0553f">💔 Pierdes 1 vida. Vidas: ${Math.max(0,S.lives)}/3</span>`}
+  hud();S.sc='f_res';
+  R(bg+P(105,205,S.lives>0?'j':'f',3.2,F_prof)+P(255,205,'f',3.2,F_prof)+tx(180,60,ic,46,'#fff'));
+  T(m);
+  B(S.lives<=0?[['Ver final',()=>end('f_dead')]]:[['Siguiente',nextFortunatoEvent]]);
+}
+
+const FH=['🔭 <i>Pista: a lo lejos, en el horizonte, la gran mansión de Montresor se ve apagada, sin una sola luz. ¿Quién te invita a beber en una casa a oscuras?</i>','🔭 <i>Pista: desde aquí la mansión sigue apagada. Quien te asegura que «nadie vigila» quizá te esconde algo más.</i>','🔭 <i>Pista: Montresor bebe de la misma botella que te ofrece. Si tuviera veneno, él no la probaría.</i>','🔭 <i>Pista: entre los huesos del fondo del nicho brillan unas argollas de hierro, nuevas y bien aceitadas.</i>'];
+function mansion(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})"><path d="M0 0V-34H14V-52L30-66 46-52V-34H62V0Z" fill="#07060b" stroke="#2a2a3a"/>`+[8,26,44].map(a=>`<rect x="${a}" y="-28" width="8" height="12" fill="#12121c"/>`).join('')+'<rect x="26" y="-48" width="8" height="10" fill="#12121c"/></g>'}
+function bgCarn(){
+  let s='<defs><linearGradient id="ck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1040"/><stop offset="1" stop-color="#6a2a5a"/></linearGradient></defs><rect width="360" height="330" fill="url(#ck)"/>';
+  [[45,'#c0392b'],[155,'#2f6fd6'],[270,'#e8a317']].forEach(([x,c])=>s+=`<path d="M${x-48} 135L${x} 72L${x+48} 135Z" fill="${c}"/><path d="M${x-48} 135L${x-16} 104L${x} 135L${x+16} 104L${x+48} 135Z" fill="#f4ebd0" opacity=".9"/><rect x="${x-48}" y="135" width="96" height="50" fill="#2a1a30"/><rect x="${x-14}" y="146" width="28" height="39" rx="14" fill="#f0b84a" opacity=".55"/>`);
+  s+='<rect y="185" width="360" height="145" fill="#2a2030"/>';
+  for(let i=0;i<7;i++)s+=`<path d="M0 ${195+i*20}H360" stroke="#1a1422" stroke-width="2"/>`;
+  s+='<path d="M0 12Q90 52 180 12Q270 52 360 12" stroke="#222" fill="none" stroke-width="2"/>';
+  const pc=['#e8a317','#e0553f','#6fd6a0','#6aa0ff','#f4ebd0'];
+  for(let i=0;i<14;i++){const x=13+i*26.5,y=12+20*Math.sin(Math.PI*(x%180)/180);s+=`<circle cx="${x}" cy="${y+3}" r="7" fill="${pc[i%5]}" opacity=".25"/><circle cx="${x}" cy="${y+3}" r="3.5" fill="${pc[i%5]}"/>`}
+  for(let i=0;i<30;i++){const a=(i*53)%350,b=40+(i*97)%260;s+=`<rect x="${a}" y="${b}" width="4" height="2" fill="${pc[i%5]}" opacity=".7" transform="rotate(${i*37} ${a} ${b})"/>`}
+  return s+tx(30,60,'🎈',20)+tx(330,66,'🎈',20)+tx(200,52,'🎈',16)}
+function bgHall(){
+  let s='<rect width="360" height="330" fill="#2b1d18"/>';
+  for(let i=0;i<12;i++)s+=`<rect x="${i*30}" width="15" height="255" fill="#33231c"/>`;
+  s+='<rect y="170" width="360" height="85" fill="#3a2518"/><path d="M0 170H360" stroke="#8a5a2b" stroke-width="3"/>';
+  for(let i=0;i<9;i++)s+=`<rect x="${i*42+6}" y="180" width="34" height="68" rx="3" fill="#2a1a12" stroke="#1a100b"/>`;
+  s+='<rect x="146" y="26" width="72" height="104" rx="30" fill="#0f1a3a" stroke="#8a5a2b" stroke-width="5"/><circle cx="190" cy="56" r="14" fill="#f4ebd0"/><path d="M182 26V130M146 78H218" stroke="#8a5a2b" stroke-width="3"/><path d="M180 0V16M140 16H220" stroke="#8a6d3b" stroke-width="2"/>'+[140,160,180,200,220].map(x=>`<ellipse cx="${x}" cy="12" rx="3" ry="5" fill="#f0b84a"/>`).join('');
+  return s+'<rect y="255" width="360" height="75" fill="#1a120e"/><ellipse cx="195" cy="300" rx="120" ry="20" fill="#5a1a1a" opacity=".7"/>'}
+function docView(id){
+  S.sc='doc';
+  const L=id=='n'?['MONTRESOR · PALAZZO','','«Los criados se fueron al','carnaval. Nadie vigilará','el palazzo esta noche.»','','DIRECCIÓN:','Toma las antorchas junto a la','mesa y baja por el arco de la','izquierda. Sigue el pasillo','hasta el nicho, junto al tonel.']:['PLANO · CATACUMBAS','','Tres arcos en la oscuridad:','','1.º   '+nm[S.path[0]],'2.º   '+nm[S.path[1]],'3.º   '+nm[S.path[2]],'','Al fondo: el nicho y el tonel.','Allí te espera Fortunato.'];
+  let s='<defs><radialGradient id="vg"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".9"/></radialGradient></defs><rect width="360" height="330" fill="#0a0705"/><g transform="rotate(-2 180 165)"><rect x="40" y="22" width="280" height="286" rx="4" fill="#e6d2a2" stroke="#8a6d3b" stroke-width="2"/><rect x="40" y="22" width="280" height="286" fill="#b58a45" opacity=".18"/><ellipse cx="90" cy="270" rx="34" ry="22" fill="#8a5a2b" opacity=".15"/><path d="M40 165H320" stroke="#8a6d3b" opacity=".25"/>';
+  L.forEach((t,i)=>s+=`<text x="58" y="${58+i*21}" font-family="Courier New,monospace" font-size="12.5" fill="${i==0?'#7a1c1c':'#2a1d10'}" font-weight="${i==0?700:400}">${t}</text>`);
+  s+='<circle cx="285" cy="282" r="15" fill="#9b1c1c"/><circle cx="285" cy="282" r="9" fill="#7a1010" stroke="#c0392b"/></g><rect width="360" height="330" fill="url(#vg)" pointer-events="none"/>';
+  R(s);T('📄 <i>Examinas el documento a la luz de la antorcha.</i>');B([['Cerrar documento',palazzo]]);
+}
+function trapEnd(){
+  S.sc='trap';
+  R(bgCrypt('#080605')+'<rect x="80" y="40" width="200" height="270" fill="#3a3a40"/>'+P(130,170,'f',3.4,F_prof)+P(265,230,'j',2.4,0)+tx(180,34,'⛓️',26,'#fff'));
+  T('Al tocar las argollas, Fortunato —que ya sospechaba de ti— te empuja al nicho y cierra las cadenas. «Una excelente broma, Montresor.» Sus cascabeles se alejan...');
+  B([['Ver final',()=>end('enc')]]);
+}
+const SCN={in:['🎭','Carnaval en Venecia','Juraste venganza'],pl:['🎪','Plaza del carnaval','Busca el traje morado y dorado'],dl:['🗣️','Frente a Fortunato','Elige bien tus palabras'],pz:['🏛️','El palazzo','Nadie vigila esta noche'],mu:['🧱','El muro','Piedra sobre piedra'],doc:['📄','Documento','Léelo con calma'],f_dress:['🪞','Acto I · El disfraz','Luce como un verdadero bufón'],f_street:['🏮','Acto II · Calles de Venecia','Ábrete paso entre la multitud'],f_run:['🏃','¡Corre a la plaza!','Esquiva y recoge coronas'],f_intro:['🎭','Montresor te espera','Comienza el juego psicológico'],f_wi:['🍷','La copa de Medoc','Pulso firme'],f_wine:['🍷','¡Equilibrio!','No derrames ni una gota'],f_esc:['⛓️','¡La cadena cede!','Es hora de escapar'],f_x:['🕯️','Sin escapatoria','Las piedras se acercan'],trap:['⛓️','Una trampa','Fortunato lo sabía'],end:['🏁','Fin','']};
+const CTB={w:['🍷','Las botellas','Ofrécele Medoc'],a:['🛡️','Los escudos','Recuerda el lema'],s:['🤝','La seña masónica','¿Eres masón?'],d:['💀','Cripta profunda','El tonel te espera'],n:['⛓️','El nicho','Ya casi']};
+function bn(){
+  const s=S.sc;
+  if(s=='f_event')return['❓','Dilema '+(S.evIndex+1)+'/4',['Una invitación','Un palazzo vacío','La escalera','El nicho'][S.evIndex]];
+  if(s=='f_lamp')return['🔦',['Cripta profunda · 1/3','Galería de arcos · 2/3','Escalera final · 3/3'][S.ls],['Busca una pista','Tres palancas ocultas','La llave y la puerta'][S.ls]];
+  if(s=='ct')return S.ph=='m'?['🌀','Los arcos','Tramo '+(S.m+1)+'/3']:CTB[S.ph]||null;
+  return SCN[s]||null}
+function ambK(){
+  const s=S?S.sc:null;
+  if(['in','pl','dl','f_street','f_intro','f_dress'].includes(s))return 'c';
+  if(['ct','mu','f_wi','f_esc','f_x','trap'].includes(s))return 'e';
+  if(s=='f_event')return S.evIndex<2?'c':'e';
+  if(s=='f_res')return S.evIndex-1<2?'c':'e';
+  return null}
+function amb(k){
+  const pc=['#e8a317','#e0553f','#6fd6a0','#6aa0ff','#f4ebd0'];let s='<g pointer-events="none">';
+  for(let i=0;i<14;i++){const x=Math.random()*350,d=(2.5+Math.random()*3).toFixed(1),dl=(-Math.random()*5).toFixed(1);
+    s+=k=='c'?`<rect class="cf" x="${x}" y="0" width="4" height="7" fill="${pc[i%5]}" opacity=".8" style="animation-duration:${d}s;animation-delay:${dl}s"/>`:`<circle class="em" cx="${x}" cy="${250+Math.random()*70}" r="${1+Math.random()*1.5}" fill="#f0a24a" style="animation-duration:${d}s;animation-delay:${dl}s"/>`}
+  return s+'</g>'}
+function end(k){
+  clearInterval(RT);clearInterval(WT);clearInterval(LT);S.bat=null;
+  S.sc='end';
+  if(!seen.includes(k)){seen.push(k);try{localStorage.setItem('tonel_v5',JSON.stringify(seen))}catch(e){}}
+  const e=END[k];
+  R('<rect width="360" height="330" fill="'+e[2]+'"/>'+tx(180,160,e[3],80,'#fff')+tx(180,250,e[0],20,'#f4ebd0',1));
+  T(`<b>${e[0]}</b><br>${e[1]}<br><small>Finales descubiertos: ${seen.length}/8.</small>`);
+  B([['Jugar de nuevo', intro]]);
+  hud();
+}
+
+intro();
+</script>
+</body>
+</html>
