@@ -40,6 +40,18 @@ button:disabled{opacity:.4;border-color:var(--bd);cursor:not-allowed}
 .bn{position:absolute;left:50%;top:10px;background:rgba(10,6,4,.82);border:1px solid #c9a063;border-radius:10px;padding:6px 16px;text-align:center;line-height:1.35;color:#f4ebd0;white-space:nowrap;animation:bn 2.4s ease both;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.6)}
 .bn b{display:block;font-size:15px;color:#e8a317}.bn small{font-size:11px;color:#c9b48a;font-style:italic}
 .tn{animation:tn .5s ease-out}.cf,.em{transform-box:fill-box;transform-origin:center;animation:fall 4s linear infinite}.em{animation-name:rise}
+
+/* Prólogo cómic cinematográfico */
+.comic-panel{filter:drop-shadow(0 8px 18px #0009)}
+@keyframes comicIn{0%{opacity:0;transform:scale(1.12) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+#st svg.comic-in{animation:comicIn .65s cubic-bezier(.2,.8,.2,1) both}
+@media(prefers-reduced-motion:reduce){#st svg.comic-in{animation:none}}
+@keyframes bpop{0%{opacity:0;transform:scale(.4)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+@keyframes sfx{0%{opacity:0;transform:scale(2.2)}60%{transform:scale(.92)}100%{opacity:1;transform:scale(1)}}
+.bub{transform-box:fill-box;transform-origin:50% 100%;animation:bpop .45s .4s cubic-bezier(.2,1.4,.4,1) both}
+.bub2{animation-delay:.95s}
+.sfx{transform-box:fill-box;transform-origin:center;animation:sfx .4s .2s ease-out both}
+@media(prefers-reduced-motion:reduce){.bub,.sfx{animation:none}}
 </style>
 </head>
 <body>
@@ -55,6 +67,7 @@ button:disabled{opacity:.4;border-color:var(--bd);cursor:not-allowed}
 <script>
 let S,seen=[],lastK=null;try{seen=JSON.parse(localStorage.getItem('tonel_v5')||'[]')}catch(e){}
 const $=i=>document.getElementById(i);
+let unlocked=seen.includes('ca')||seen.includes('ve');try{if(localStorage.getItem('tonel_unlock')=='1')unlocked=true}catch(e){}
 const R=s=>{
   const sc=S?S.sc:null;
   const k=sc+(sc=='f_lamp'?S.ls:'')+(sc=='f_event'?S.evIndex:'')+(sc=='ct'?S.ph+(S.ph=='m'?S.m:''):'');
@@ -125,7 +138,7 @@ function hud(){
   } else if(!S.char){$('hud').innerHTML=''}
   else {
     const L=Math.max(0,S.lives||0);
-    $('hud').innerHTML=`<span>❤️ ${'❤️'.repeat(L)}${'🖤'.repeat(3-L)}</span><span>👑 ${S.crowns||0}/5</span>${S.bat!=null?`<span>🔦 ${S.bat}s</span>`:''}<span>🏁 ≥2❤️ y ≥5👑</span>`;
+    $('hud').innerHTML=`<span>❤️ ${'❤️'.repeat(L)}${'🖤'.repeat(3-L)}</span><span>👑 ${S.crowns||0}/4</span>${S.bat!=null?`<span>🔦 ${S.bat}s</span>`:''}<span>🏁 ≥2❤️ y ≥4👑</span>`;
   }
 }
 
@@ -141,22 +154,23 @@ function sus(m){if(S.su<3)S.su++;hud();if(S.su>=3&&!S.trap){S.trap=1;T(`${m} <sp
 const rn=(i,m)=>Math.floor((((Math.sin(i*12.9898+S.sd*78.233)*43758.5453)%1)+1)%1*m);
 const nm=['izquierda','centro','derecha'];
 
-function intro(){
+function characterSelect(){
+  stopComicMusic();
   clearInterval(RT);clearInterval(WT);clearInterval(LT);
   S={char:null,cl:new Set(),det:{},it:{t:0,p:0},su:0,sd:Math.random()*100,fi:Math.floor(Math.random()*24),path:[0,1,2].map(()=>Math.floor(Math.random()*3)),so:[0,1,2].sort(()=>Math.random()-.5),w:0,m:0,row:0,sc:'intro'};
   hud();$('lg').style.display='none';
-  R('<rect width="360" height="330" fill="#16100c"/>'+card(15,'FORTUNATO',['Bufón del carnaval','Gorro cascabeles','Traje rombos'],'j','cF')+card(195,'MONTRESOR',['Burgués de clase alta','Sombrero copa','Monóculo'],'f','cM'));
-  T('👆 <i>Toca la imagen de un personaje para empezar.</i><br><br><b>Elige tu personaje / Choose your character:</b><br><br>🇪🇸 <b>Montresor (Clásico):</b> Vengarte de Fortunato, busca pistas en la plaza y el palazzo, desciende a las catacumbas y séllalo.<br><br>🇬🇧 <b>Fortunato (Modo Historia Interactiva + Supervivencia):</b> ¡Vistete para el carnaval, esquiva gente en las calles de Venecia, reúne coronas y sobrevive a los engaños de Montresor!');
+  R('<rect width="360" height="330" fill="#16100c"/>'+card(15,'FORTUNATO',['Bufón del carnaval','Gorro cascabeles','Traje rombos'],'j',unlocked?'cF':null)+card(195,'MONTRESOR',['Burgués de clase alta','Sombrero copa','Monóculo'],'f','cM')+(unlocked?'':'<g transform="translate(15,12)" pointer-events="none"><rect width="150" height="286" rx="12" fill="#000" opacity=".68"/>'+tx(75,120,'🔒',44)+tx(75,172,'BLOQUEADO',13,'#e8a317',1)+tx(75,192,'Termina la historia',10,'#f4ebd0')+tx(75,206,'de Montresor',10,'#f4ebd0')+'</g>'));
+  T('👆 <i>Toca la imagen de un personaje para empezar.</i><br><br><b>Elige tu personaje / Choose your character:</b><br><br>'+(unlocked?'':'🔒 <b>Fortunato se desbloquea</b> al terminar la historia principal con Montresor (final clásico o perfecto).<br><br>')+'🇪🇸 <b>Montresor (Clásico):</b> Vengarte de Fortunato, busca pistas en la plaza y el palazzo, desciende a las catacumbas y séllalo.<br><br>🇬🇧 <b>Fortunato (Modo Historia Interactiva + Supervivencia):</b> ¡Vistete para el carnaval, esquiva gente en las calles de Venecia, reúne coronas y sobrevive a los engaños de Montresor!');
   B([
-    ['🇪🇸 Jugar como Montresor (Clásico)', ()=>setChar('montresor')],
-    ['🎭 Jugar como Fortunato (Historia + Supervivencia)', ()=>setChar('fortunato')]
+    ['🇪🇸 Jugar como Montresor (Clásico) · Play', ()=>setChar('montresor')],
+    [unlocked?'🎭 Jugar como Fortunato (Historia + Supervivencia) · Play':'🔒 Fortunato: termina antes la historia de Montresor', ()=>setChar('fortunato'),!unlocked]
   ]);
 }
 
 function setChar(c){
   S.char=c;
   if(c==='montresor'){introMontresor();}
-  else{introFortunatoStory();0}
+  else if(unlocked){introFortunatoStory()}
 }
 
 // ---------------- MONTRESOR PATH ----------------
@@ -164,7 +178,7 @@ function introMontresor(){
   S.sc='in';hud();
   R('<rect width="360" height="330" fill="#16100c"/>'+card(15,'FORTUNATO',['Bufón del carnaval','Gorro cascabeles','Traje rombos'],'j')+card(195,'MONTRESOR',['Burgués orgulloso','Sombrero copa','Monóculo'],'f'));
   T('<b>Carnaval en Venecia.</b><br>Juraste venganza contra Fortunato. Encuéntralo en la plaza (ahora con personajes claramente diferenciados por trajes y colores), reúne las <b>7 pistas</b> y castígalo.');
-  B([['Comenzar búsqueda',plaza]]);
+  B([['Comenzar búsqueda · Start',plaza]]);
 }
 
 function plaza(){
@@ -188,12 +202,12 @@ function plaza(){
 }
 
 const A={
-  intro:id=>{if(id=='cM')setChar('montresor');else if(id=='cF')setChar('fortunato')},
+  intro:id=>{if(id=='cM')setChar('montresor');else if(id=='cF'&&unlocked)setChar('fortunato')},
   mu:()=>{if(S.row<10)hil()},
   pl:id=>{
     if(id=='pos'){cl('luc','Lucresi es su rival en vinos.');return}
     const i=+id.slice(1);if(S.found){if(i==S.fi)dialogo();return}
-    if(i==S.fi){S.found=1;cl('card','¡Fortunato encontrado! Tócalo de nuevo para acercarte.');B([['Acercarse a Fortunato',dialogo]])}
+    if(i==S.fi){S.found=1;cl('card','¡Fortunato encontrado! Tócalo de nuevo para acercarte.');B([['Acercarse a Fortunato · Go',dialogo]])}
     else sus('Ese no es Fortunato: es otro enmascarado.')
   },
   pz:id=>{
@@ -232,7 +246,7 @@ const A={
         if(S.trap){trapEnd();return}
         S.ch=1;
         T('¡Fortunato encadenado!');
-        B([['Tomar piedras y mortero',muro]]);
+        B([['Tomar piedras y mortero · Take',muro]]);
       }
     }
   }
@@ -242,11 +256,11 @@ function dialogo(){
   S.sc='dl';
   R(bgVenice()+P(95,150,'f',4,F_prof)+P(265,150,'j',4,0)+tx(95,290,'Montresor',13,'#f4ebd0')+tx(265,290,'Fortunato',13,'#f4ebd0'));
   T('Fortunato te saluda ebrio. Le hablas del amontillado. ¿Qué le dices?');
-  const go=m=>{T(m);B([['Ir al palazzo',palazzo]])};
+  const go=m=>{T(m);B([['Ir al palazzo · Go',palazzo]])};
   B([
-    ['«Ven ya a mi bodega, es una orden.»', ()=>sus('Frunce el ceño con desconfianza.')],
+    ['«Ven ya a mi bodega, es una orden.» · Come!', ()=>sus('Frunce el ceño con desconfianza.')],
     [S.cl.has('luc')?'«Mejor se lo pregunto a Lucresi…»':'(Falta pista Lucresi)', ()=>go('«¡Lucresi es un ignorante! ¡Vamos!»'),!S.cl.has('luc')],
-    ['«Estás resfriado; las criptas son húmedas.»', ()=>go('«¡Un catarro no es nada! ¡Vamos!»')]
+    ['«Estás resfriado; las criptas son húmedas.» · Stop!', ()=>go('«¡Un catarro no es nada! ¡Vamos!»')]
   ]);
 }
 
@@ -265,7 +279,7 @@ function pzd(){
 function palazzo(){
   S.sc='pz';pzd();
   T('<b>Palazzo:</b> Explora y toca los objetos útiles. Toca la nota y el plano para leerlos. Cuando estés listo, <b>toca la puerta</b> de las catacumbas.');
-  B([['Bajar a las catacumbas', descend]])}
+  B([['Bajar a las catacumbas · Go down', descend]])}
 
 function descend(){if(!S.it.t)T('Necesitas antorchas.');else wine('Descienden. Ofrécele Medoc.')}
 
@@ -297,12 +311,12 @@ function sign(){
   R(bgCrypt('#120c0a')+P(180,120,'j',4,0)+tx(180,300,'«¿No sois masón? Haced una seña.»',13,'#f4ebd0'));
   T('Fortunato pide una señal de masón. ¿Qué haces?');
   B([
-    ['Mostrar tu pala de albañil', ()=>{
+    ['Mostrar tu pala de albañil · Show', ()=>{
       S.cl.add('sig');S.det.sig='Pala de albañil como seña masónica.';hud();
       T('Fortunato parpadea desconcertado. Avanzan.');
-      B([['Seguir avanzando',maze]])
+      B([['Seguir avanzando · Go',maze]])
     },!S.it.p],
-    ['Hacer un gesto al azar', ()=>{if(!sus('Fortunato se ríe: «Eso no es nada».'))B([['Seguir avanzando',maze]])}]
+    ['Hacer un gesto al azar · Try', ()=>{if(!sus('Fortunato se ríe: «Eso no es nada».'))B([['Seguir avanzando · Go',maze]])}]
   ]);
 }
 
@@ -321,7 +335,7 @@ function deep(){
   S.ph='d';
   R(bgCrypt('#080605')+hs('o','<rect x="10" y="90" width="110" height="200" fill="#d8ccb0"/><circle cx="40" cy="130" r="14" fill="#7a6e56"/><circle cx="85" cy="190" r="14" fill="#7a6e56"/><circle cx="50" cy="250" r="14" fill="#7a6e56"/>')+hs('ton','<ellipse cx="305" cy="260" rx="38" ry="46" fill="#2a1a0f"/><path d="M270 235H340M270 285H340" stroke="#5c4028" stroke-width="4"/><path d="M275 225L335 290M335 225L275 290" stroke="#bbb" stroke-width="1" opacity=".5"/>')+hs('nic','<path d="M150 290V150Q150 100 190 100T230 150V290Z" fill="#000" stroke="#5c4028" stroke-width="5"/>'+tx(190,310,'👆 nicho',11,'#e8a317',1)));
   T('Cripta profunda. Explora las sombras y el tonel, o toca el nicho para entrar.');
-  B([['Entrar al nicho',nicho]]);
+  B([['Entrar al nicho · Enter',nicho]]);
 }
 
 function nicho(){
@@ -334,7 +348,7 @@ function nicho(){
 function muro(){
   S.sc='mu';S.row=0;if(!S.it.p){end('sp');return}
   mw();T('Comienzas a levantar el muro. Toca el muro para colocar cada hilera.');
-  B([['Colocar hilera',hil]]);
+  B([['Colocar hilera · Put',hil]]);
 }
 
 function mw(){
@@ -350,8 +364,8 @@ function hil(){
   else if(n==10){
     T('Fila 10. «¡Una excelente broma!... ¡Por el amor de Dios, Montresor!»');
     B([
-      ['«Sí, por el amor de Dios.» Sellar', ()=>{S.row=11;mw();fin()}],
-      ['Liberarlo', ()=>end('pi')]
+      ['«Sí, por el amor de Dios.» Sellar · Seal', ()=>{S.row=11;mw();fin()}],
+      ['Liberarlo · Free', ()=>end('pi')]
     ]);
     return;
   }
@@ -444,8 +458,8 @@ function introFortunatoStory(){
   S.sc='f_dress';S.lives=3;S.crowns=0;S.evIndex=0;S.hat=0;S.wineDone=0;S.dp=0;S.eq={};S.lk=0;S.fx=null;S.tray=shuf(['hat','suit','shoe'].flatMap(sl=>Object.keys(DN[sl]).map(t=>sl+':'+t)));
   S.req={hat:rnd(['gold','purple','red']),suit:rnd(['rom','red','grn']),shoe:rnd(['gold','red','blk'])};
   hud();dressScene();
-  T('<b>Acto I: El Disfraz de Carnaval</b><br>Mira la tarjeta <b>MODELO</b> y <b>arrastra</b> (o toca) cada prenda hasta el maniquí. Si sales mal vestido perderás ❤️.');
-  B([['✔ Estoy listo',confirmDress]]);
+  T('<b>Acto I: El Disfraz de Carnaval</b><br><small>📖 <i>Si no leíste el cuento: Montresor odia a Fortunato y lo engaña con un barril de «amontillado» para llevarlo a sus catacumbas y emparedarlo vivo. Tú eres Fortunato: aprende a desconfiar. En cada dilema tendrás un botón 💡 de ayuda.</i></small><br><br>Mira la tarjeta <b>MODELO</b> y <b>arrastra</b> (o toca) cada prenda hasta el maniquí. Si sales mal vestido perderás ❤️.');
+  B([['✔ Estoy listo · Ready',confirmDress]]);
 }
 function confirmDress(){
   const bad=['hat','suit','shoe'].filter(k=>S.eq[k]!=S.req[k]);
@@ -532,7 +546,7 @@ function plazaRun(){
   [0,1,2].forEach(i=>s+=hs('l'+i,`<rect x="${i*120}" y="0" width="120" height="330" fill="transparent"/>`));
   R(s);setPl();
   T('<b>Minijuego: ¡Corre a la plaza!</b><br>Toca un carril para moverte. Esquiva a la gente (−❤️) y recoge las 👑 (máximo 4 en total).');
-  B([]);RT=setInterval(runTick,450);
+  B([]);RT=setInterval(runTick,520);
 }
 A.f_run=id=>{S.ln=+id[1];setPl()};
 function runTick(){
@@ -550,7 +564,7 @@ function runTick(){
   if(S.lives<=0){clearInterval(RT);end('f_dead');return}
   if(S.tk>=42){clearInterval(RT);S.sc='f_runend';
     T(`<b>¡Llegaste a la plaza!</b><br>👑 Coronas recogidas: <b>${S.rc}/4</b> · 💔 Golpes: <b>${S.rh}</b>`);
-    B([['Buscar a Montresor',meetMontresor]])}
+    B([['Buscar a Montresor · Find',meetMontresor]])}
 }
 
 // ---- Minijuego: que no se derrame el vino
@@ -558,25 +572,25 @@ function wineIntro(){
   S.sc='f_wi';
   R(bgCrypt()+P(105,200,'j',3.2,0)+P(255,200,'f',3.2,F_prof)+tx(180,48,'🍷 Montresor te ofrece una copa',13,'#e8a317',1));
   T('<b>Minijuego: ¡No tires el vino!</b><br>Bajas la escalera con la copa de Medoc. Toca la <b>mitad izquierda o derecha</b> de la pantalla para equilibrarla. Cada 6 segundos firme = 👑. Si se derrama = −❤️.');
-  B([['🍷 Tomar la copa',wineGame]]);
+  B([['🍷 Tomar la copa · Take',wineGame]]);
 }
 function wineGame(){
   S.sc='f_wine';S.wx=0;S.wv=0;S.wt=0;S.wsp=0;S.wineDone=1;
   let s=bgCrypt('#140e0c')+P(75,200,'j',2.4,0)+'<rect x="40" y="26" width="280" height="8" rx="4" fill="#050302"/><rect id="pr" x="40" y="26" width="0" height="8" rx="4" fill="#d4a017"/><rect x="40" y="290" width="280" height="14" rx="7" fill="#050302" stroke="#5c4028"/><rect x="130" y="290" width="100" height="14" rx="7" fill="#2f9e44" opacity=".7"/><circle id="mk" cx="180" cy="297" r="9" fill="#e8a317"/>';
   s+='<g id="gb" transform="translate(235,200)"><path d="M-34-60H34L27-12Q0 18-27-12Z" fill="#cfd8e6" opacity=".35" stroke="#cfd8e6" stroke-width="2"/><path d="M-30-38H30L26-12Q0 14-26-12Z" fill="#7a1530"/><rect x="-3" y="12" width="6" height="40" fill="#cfd8e6"/><ellipse cy="54" rx="26" ry="6" fill="#cfd8e6"/></g>'+tx(60,270,'👈 Toca',12,'#e8a317',1)+tx(300,270,'Toca 👉',12,'#e8a317',1);
   s+=hs('L','<rect width="180" height="330" fill="transparent"/>')+hs('R','<rect x="180" width="180" height="330" fill="transparent"/>');
-  R(s);T('🍷 <b>Equilibra la copa.</b> Mantén la bolita dorada en la zona verde.');B([]);
+  R(s);T('🍷 <b>Equilibra la copa.</b> <i>(Balance!)</i> Mantén la bolita dorada en la zona verde.');B([]);
   WT=setInterval(wineTick,100);
 }
 A.f_wine=id=>{S.wv+=id=='L'?-.1:.1};
 function wineTick(){
-  S.wt++;S.wv+=(Math.random()-.5)*.06+S.wx*.012;S.wv*=.96;S.wx+=S.wv;
+  S.wt++;S.wv+=(Math.random()-.5)*.04+S.wx*.008;S.wv*=.96;S.wx+=S.wv;
   if(Math.abs(S.wx)>1){S.lives--;S.wsp=S.wt;S.wx=0;S.wv=0;hud();T('💦 <b>¡Se derrama el vino!</b> Pierdes 1 corazón.');
     if(S.lives<=0){clearInterval(WT);end('f_dead');return}}
   if(S.wt%60==0){if(S.wt-S.wsp>=60){S.crowns++;hud();T('👑 <b>Pulso firme.</b> +1 corona.')}else T('Sigue... equilibra la copa.')}
   $('gb').setAttribute('transform',`translate(235,200) rotate(${S.wx*28})`);
   $('mk').setAttribute('cx',180+S.wx*130);$('pr').setAttribute('width',280*S.wt/180);
-  if(S.wt>=180){clearInterval(WT);S.sc='f_wo';T(`<b>¡Llegaste abajo con la copa!</b><br>👑 ${S.crowns}/5 · ❤️ ${S.lives}/3`);B([['Seguir bajando',nextFortunatoEvent]])}
+  if(S.wt>=180){clearInterval(WT);S.sc='f_wo';T(`<b>¡Llegaste abajo con la copa!</b><br>👑 ${S.crowns}/4 · ❤️ ${S.lives}/3`);B([['Seguir bajando · Go',nextFortunatoEvent]])}
 }
 
 // ---- Escape: linterna
@@ -586,12 +600,12 @@ function lObj(o,i){
   const g=o.c?`<rect x="${o.x-3}" y="${o.y-16}" width="6" height="30" fill="#8a8f98"/><circle cx="${o.x}" cy="${o.y-18}" r="9" fill="${LV[o.c]}" stroke="#fff" stroke-width="1.5"/><rect x="${o.x-14}" y="${o.y+12}" width="28" height="8" rx="3" fill="#3a3a40"/>`:tx(o.x,o.y+10,o.e,30);
   return `<g id="o${i}">${g}</g>`}
 function fOutcome(){
-  if(S.lives<2||S.crowns<5){S.sc='f_x';R(bgCrypt()+P(180,170,'j',3,0)+tx(180,48,'SIN ESCAPATORIA',16,'#e0553f',1));
-    T(`<b>Montresor vuelve con las piedras.</b><br>Para escapar necesitabas <b>≥2 ❤️</b> y <b>≥5 👑</b>. Tienes ${S.lives}❤️ y ${S.crowns}👑.`);B([['Ver final',()=>end('f_dead')]]);return}
+  if(S.lives<2||S.crowns<4){S.sc='f_x';R(bgCrypt()+P(180,170,'j',3,0)+tx(180,48,'SIN ESCAPATORIA',16,'#e0553f',1));
+    T(`<b>Montresor vuelve con las piedras.</b><br>Para escapar necesitabas <b>≥2 ❤️</b> y <b>≥4 👑</b>. Tienes ${S.lives}❤️ y ${S.crowns}👑.`);B([['Ver final · See',()=>end('f_dead')]]);return}
   S.sc='f_esc';
-  R(bgCrypt()+P(180,160,'j',3.4,0)+tx(180,48,'¡LA CADENA CEDE!',16,'#e8a317',1)+tx(180,300,'❤️≥2 ✓   👑≥5 ✓',13,'#f4ebd0',1));
+  R(bgCrypt()+P(180,160,'j',3.4,0)+tx(180,48,'¡LA CADENA CEDE!',16,'#e8a317',1)+tx(180,300,'❤️≥2 ✓   👑≥4 ✓',13,'#f4ebd0',1));
   T('<b>¡Lo conseguiste!</b> Con tus corazones y coronas, un cascabel dorado te sirve de ganzúa y la cadena cede. Montresor fue por piedras: tienes poco tiempo y una linterna.<br><br><b>Arrastra el dedo para alumbrar</b>, toca lo que encuentres y vuelve a la superficie.');
-  B([['🔦 Encender la linterna',()=>lamp(0)]]);
+  B([['🔦 Encender la linterna · Turn on',()=>lamp(0)]]);
 }
 function lamp(st){
   clearInterval(LT);S.sc='f_lamp';S.ls=st;S.lx=180;S.ly=165;S.pl=0;S.lock=0;
@@ -617,14 +631,14 @@ function lampTap(){
   const i=S.lo.findIndex(o=>!o.d&&Math.hypot(o.x-S.lx,o.y-S.ly)<30);if(i<0)return;
   const o=S.lo[i],hide=()=>{o.d=1;$('o'+i).style.display='none'};
   if(o.id=='rat'){hide();lampPen(6,'🐀 ¡Una rata! La linterna parpadea. <b>−6 s</b>')}
-  else if(o.id=='scroll'){hide();S.lock=1;clearInterval(LT);T(`📜 <b>Inscripción:</b> «Para abrir la reja: <b>${S.ord.join(' → ')}</b>».`);B([['Seguir',()=>lamp(1)]])}
+  else if(o.id=='scroll'){hide();S.lock=1;clearInterval(LT);T(`📜 <b>Inscripción:</b> «Para abrir la reja: <b>${S.ord.join(' → ')}</b>».`);B([['Seguir · Go',()=>lamp(1)]])}
   else if(o.id=='key'){hide();S.key=1;T('🔑 <b>¡Llave oxidada!</b> Ahora busca la puerta.')}
   else if(o.id=='door'){
     if(!S.key)T('🚪 Está cerrada con llave. Sigue buscando.');
     else{S.lock=1;clearInterval(LT);end('f_free')}}
   else if(o.c){
     if(o.c==S.ord[S.pl]){o.d=1;S.pl++;$('o'+i).style.opacity=.35;
-      if(S.pl==3){S.lock=1;clearInterval(LT);T('⚙️ <b>¡Clac!</b> La reja se abre con un chirrido.');B([['Subir la escalera',()=>lamp(2)]])}
+      if(S.pl==3){S.lock=1;clearInterval(LT);T('⚙️ <b>¡Clac!</b> La reja se abre con un chirrido.');B([['Subir la escalera · Climb',()=>lamp(2)]])}
       else T(`⚙️ Palanca ${o.c} activada (${S.pl}/3).`)}
     else{S.pl=0;S.lo.forEach((q,j)=>{if(q.c){q.d=0;$('o'+j).style.opacity=1}});lampPen(8,'⚙️ Orden incorrecto: el mecanismo se reinicia. <b>−8 s</b>')}}
 }
@@ -632,8 +646,8 @@ function lampTap(){
 function meetMontresor(){
   S.sc='f_intro';hud();
   R(bgVenice()+P(105,205,'j',3.2,0)+P(255,205,'f',3.2,F_prof)+tx(180,45,'ENCUENTRO CON MONTRESOR',15,'#e8a317',1));
-  T('<b>Montresor te sonríe.</b> Comienza el juego psicológico.<br><br>• <b>Acertar</b> te da una <b>Corona 👑</b>. • <b>Equivocarte</b> te quita un <b>Corazón ❤️</b>.<br>• Habrá un minijuego del vino. Si terminas con <b>≥2 ❤️ y ≥5 👑</b>, podrás <b>escapar de la cripta</b>.');
-  B([['Comenzar dilemas',nextFortunatoEvent]]);
+  T('<b>Montresor te sonríe.</b> Comienza el juego psicológico.<br><br>• <b>Acertar</b> te da una <b>Corona 👑</b>. • <b>Equivocarte</b> te quita un <b>Corazón ❤️</b>.<br>• Habrá un minijuego del vino. Si terminas con <b>≥2 ❤️ y ≥4 👑</b>, podrás <b>escapar de la cripta</b>.');
+  B([['Comenzar dilemas · Start',nextFortunatoEvent]]);
 }
 
 function nextFortunatoEvent(){
@@ -643,20 +657,21 @@ function nextFortunatoEvent(){
   const ev=FORTUNATO_EVENTS[S.evIndex];S.sc='f_event';
   R((S.evIndex<2?bgVenice()+mansion(6,214,.9):bgCrypt())+P(105,205,'j',3.2,0)+P(255,205,'f',3.2,F_prof)+tx(180,45,'Dilema '+(S.evIndex+1)+'/4',14,'#c9a063',1));
   T(ev.text+'<br><br>'+FH[S.evIndex]);
-  B([['🛡️ Desconfiar (Distrust)',()=>resolveFortunatoChoice('desconfiar')],['🤝 Confiar (Trust)',()=>resolveFortunatoChoice('confiar')]]);
+  B([['🛡️ Desconfiar (Distrust) · Don’t give',()=>resolveFortunatoChoice('desconfiar')],['🤝 Confiar (Trust) · Give',()=>resolveFortunatoChoice('confiar')],['💡 Ayuda del cuento · Help',()=>{T(ev.text+'<br><br>'+FH[S.evIndex]+'<br><br>💡 <b>Ayuda:</b> '+ST[S.evIndex]+' <b>→ Lo más sensato: '+(ev.truth=='desconfiar'?'desconfiar 🛡️':'confiar 🤝')+'.</b>')}]]);
 }
 
 function resolveFortunatoChoice(c){
   const ev=FORTUNATO_EVENTS[S.evIndex],bg=S.evIndex<2?bgVenice():bgCrypt();S.evIndex++;let m,ic;
-  if(c===ev.truth){S.crowns++;ic='👑';m=`✅ <b>${c=='desconfiar'?'¡Acertaste al desconfiar!':'¡Confiaste y acertaste!'}</b><br>${ev.truthMsg}<br><span style="color:#d4a017">👑 Coronas: ${S.crowns}/5</span>`}
-  else{S.lives--;ic='💔';m=`❌ <b>${c=='confiar'?'¡Error al confiar!':'¡Error al desconfiar!'}</b><br>${c=='confiar'?ev.lieMsg:'Era una propuesta genuina, pero tu paranoia te costó caro.'}<br><span style="color:#e0553f">💔 Pierdes 1 vida. Vidas: ${Math.max(0,S.lives)}/3</span>`}
+  if(c===ev.truth){S.crowns++;ic='👑';m=`✅ <b>${c=='desconfiar'?'¡Acertaste al desconfiar!':'¡Confiaste y acertaste!'}</b><br>${ev.truthMsg}<br><span style="color:#d4a017">👑 Coronas: ${S.crowns}/4</span>`}
+  else{S.lives--;ic='💔';m=`❌ <b>${c=='confiar'?'¡Error al confiar!':'¡Error al desconfiar!'}</b><br>${c=='confiar'?ev.lieMsg:'Aquí lo correcto era confiar. Tu paranoia te costó caro.'}<br><small>📖 ${ST[S.evIndex-1]}</small><br><span style="color:#e0553f">💔 Pierdes 1 vida. Vidas: ${Math.max(0,S.lives)}/3</span>`}
   hud();S.sc='f_res';
   R(bg+P(105,205,S.lives>0?'j':'f',3.2,F_prof)+P(255,205,'f',3.2,F_prof)+tx(180,60,ic,46,'#fff'));
   T(m);
-  B(S.lives<=0?[['Ver final',()=>end('f_dead')]]:[['Siguiente',nextFortunatoEvent]]);
+  B(S.lives<=0?[['Ver final · See',()=>end('f_dead')]]:[['Siguiente',nextFortunatoEvent]]);
 }
 
 const FH=['🔭 <i>Pista: a lo lejos, en el horizonte, la gran mansión de Montresor se ve apagada, sin una sola luz. ¿Quién te invita a beber en una casa a oscuras?</i>','🔭 <i>Pista: desde aquí la mansión sigue apagada. Quien te asegura que «nadie vigila» quizá te esconde algo más.</i>','🔭 <i>Pista: Montresor bebe de la misma botella que te ofrece. Si tuviera veneno, él no la probaría.</i>','🔭 <i>Pista: entre los huesos del fondo del nicho brillan unas argollas de hierro, nuevas y bien aceitadas.</i>'];
+const ST=['En el cuento Montresor miente: inventa un barril de amontillado para atraer a Fortunato. Odia a Fortunato y sonríe para ocultarlo.','Montresor ordenó a los criados no salir de casa, sabiendo que se irían a la fiesta. Así nadie verá nada.','Montresor bebe también de ese vino: no tiene veneno. Solo busca que Fortunato siga bebiendo y no sospeche.','Al fondo del nicho están las argollas y la cadena: la trampa estaba preparada desde el principio.'];
 function mansion(x,y,s){return `<g transform="translate(${x},${y}) scale(${s})"><path d="M0 0V-34H14V-52L30-66 46-52V-34H62V0Z" fill="#07060b" stroke="#2a2a3a"/>`+[8,26,44].map(a=>`<rect x="${a}" y="-28" width="8" height="12" fill="#12121c"/>`).join('')+'<rect x="26" y="-48" width="8" height="10" fill="#12121c"/></g>'}
 function bgCarn(){
   let s='<defs><linearGradient id="ck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1040"/><stop offset="1" stop-color="#6a2a5a"/></linearGradient></defs><rect width="360" height="330" fill="url(#ck)"/>';
@@ -681,13 +696,13 @@ function docView(id){
   let s='<defs><radialGradient id="vg"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".9"/></radialGradient></defs><rect width="360" height="330" fill="#0a0705"/><g transform="rotate(-2 180 165)"><rect x="40" y="22" width="280" height="286" rx="4" fill="#e6d2a2" stroke="#8a6d3b" stroke-width="2"/><rect x="40" y="22" width="280" height="286" fill="#b58a45" opacity=".18"/><ellipse cx="90" cy="270" rx="34" ry="22" fill="#8a5a2b" opacity=".15"/><path d="M40 165H320" stroke="#8a6d3b" opacity=".25"/>';
   L.forEach((t,i)=>s+=`<text x="58" y="${58+i*21}" font-family="Courier New,monospace" font-size="12.5" fill="${i==0?'#7a1c1c':'#2a1d10'}" font-weight="${i==0?700:400}">${t}</text>`);
   s+='<circle cx="285" cy="282" r="15" fill="#9b1c1c"/><circle cx="285" cy="282" r="9" fill="#7a1010" stroke="#c0392b"/></g><rect width="360" height="330" fill="url(#vg)" pointer-events="none"/>';
-  R(s);T('📄 <i>Examinas el documento a la luz de la antorcha.</i>');B([['Cerrar documento',palazzo]]);
+  R(s);T('📄 <i>Examinas el documento a la luz de la antorcha.</i>');B([['Cerrar documento · Close',palazzo]]);
 }
 function trapEnd(){
   S.sc='trap';
   R(bgCrypt('#080605')+'<rect x="80" y="40" width="200" height="270" fill="#3a3a40"/>'+P(130,170,'f',3.4,F_prof)+P(265,230,'j',2.4,0)+tx(180,34,'⛓️',26,'#fff'));
   T('Al tocar las argollas, Fortunato —que ya sospechaba de ti— te empuja al nicho y cierra las cadenas. «Una excelente broma, Montresor.» Sus cascabeles se alejan...');
-  B([['Ver final',()=>end('enc')]]);
+  B([['Ver final · See',()=>end('enc')]]);
 }
 const SCN={in:['🎭','Carnaval en Venecia','Juraste venganza'],pl:['🎪','Plaza del carnaval','Busca el traje morado y dorado'],dl:['🗣️','Frente a Fortunato','Elige bien tus palabras'],pz:['🏛️','El palazzo','Nadie vigila esta noche'],mu:['🧱','El muro','Piedra sobre piedra'],doc:['📄','Documento','Léelo con calma'],f_dress:['🪞','Acto I · El disfraz','Luce como un verdadero bufón'],f_street:['🏮','Acto II · Calles de Venecia','Ábrete paso entre la multitud'],f_run:['🏃','¡Corre a la plaza!','Esquiva y recoge coronas'],f_intro:['🎭','Montresor te espera','Comienza el juego psicológico'],f_wi:['🍷','La copa de Medoc','Pulso firme'],f_wine:['🍷','¡Equilibrio!','No derrames ni una gota'],f_esc:['⛓️','¡La cadena cede!','Es hora de escapar'],f_x:['🕯️','Sin escapatoria','Las piedras se acercan'],trap:['⛓️','Una trampa','Fortunato lo sabía'],end:['🏁','Fin','']};
 const CTB={w:['🍷','Las botellas','Ofrécele Medoc'],a:['🛡️','Los escudos','Recuerda el lema'],s:['🤝','La seña masónica','¿Eres masón?'],d:['💀','Cripta profunda','El tonel te espera'],n:['⛓️','El nicho','Ya casi']};
@@ -713,12 +728,93 @@ function end(k){
   clearInterval(RT);clearInterval(WT);clearInterval(LT);S.bat=null;
   S.sc='end';
   if(!seen.includes(k)){seen.push(k);try{localStorage.setItem('tonel_v5',JSON.stringify(seen))}catch(e){}}
-  const e=END[k];
+  const e=END[k];let nu=0;if((k=='ca'||k=='ve')&&!unlocked){unlocked=nu=1;try{localStorage.setItem('tonel_unlock','1')}catch(x){}}
   R('<rect width="360" height="330" fill="'+e[2]+'"/>'+tx(180,160,e[3],80,'#fff')+tx(180,250,e[0],20,'#f4ebd0',1));
-  T(`<b>${e[0]}</b><br>${e[1]}<br><small>Finales descubiertos: ${seen.length}/8.</small>`);
-  B([['Jugar de nuevo', intro]]);
+  T(`<b>${e[0]}</b><br>${e[1]}<br><small>Finales descubiertos: ${seen.length}/8.</small>${nu?'<br>🔓 <b>¡Has desbloqueado a Fortunato!</b> Elígelo al volver a jugar.':''}`);
+  B([['Jugar de nuevo · Play again', intro]]);
   hud();
 }
+
+
+// ---------------- PRÓLOGO CÓMIC CINEMATOGRÁFICO ----------------
+let comicAudioCtx=null,comicMaster=null,comicOsc=[];
+function startComicMusic(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!comicAudioCtx){comicAudioCtx=new AC();comicMaster=comicAudioCtx.createGain();comicMaster.gain.value=.16;comicMaster.connect(comicAudioCtx.destination)}
+    if(comicAudioCtx.state==='suspended')comicAudioCtx.resume();
+    if(comicOsc.length)return;
+    [110,164.81,220].forEach((hz,i)=>{const o=comicAudioCtx.createOscillator(),g=comicAudioCtx.createGain();o.type=i===1?'triangle':'sine';o.frequency.value=hz;g.gain.value=[.035,.012,.008][i];o.connect(g);g.connect(comicMaster);o.start();comicOsc.push({o,g})});
+  }catch(e){}
+}
+function stopComicMusic(){
+  try{comicOsc.forEach(({o,g})=>{g.gain.setTargetAtTime(.0001,comicAudioCtx.currentTime,.12);o.stop(comicAudioCtx.currentTime+.5)});comicOsc=[]}catch(e){}
+}
+function comicSound(type='page'){
+  startComicMusic();
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    if(!comicAudioCtx){comicAudioCtx=new AC();comicMaster=comicAudioCtx.createGain();comicMaster.gain.value=.16;comicMaster.connect(comicAudioCtx.destination)}
+    if(comicAudioCtx.state==='suspended')comicAudioCtx.resume();
+    const now=comicAudioCtx.currentTime,osc=comicAudioCtx.createOscillator(),gain=comicAudioCtx.createGain();
+    osc.type=type==='impact'?'triangle':'sine';
+    osc.frequency.setValueAtTime(type==='impact'?92:type==='reveal'?520:330,now);
+    if(type==='impact')osc.frequency.exponentialRampToValueAtTime(48,now+.32);
+    else osc.frequency.exponentialRampToValueAtTime(type==='reveal'?780:440,now+.22);
+    gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(type==='impact'?.22:.09,now+.025);gain.gain.exponentialRampToValueAtTime(.0001,now+(type==='impact'?.42:.3));
+    osc.connect(gain);gain.connect(comicMaster);osc.start(now);osc.stop(now+.45);
+  }catch(e){}
+}
+const COMIC=[
+ {tag:'PORTADA',title:'El tonel de amontillado',copy:'Venecia, noche de carnaval. Un cuento de terror de Edgar Allan Poe (1846) sobre una venganza perfecta. Pasa las viñetas: así sabrás de qué va todo antes de jugar.',key:'Personajes: Montresor, el noble que se venga, y Fortunato, el bufón que presume de entender de vinos.',scene:6},
+ {tag:'I · LA PROMESA',title:'Una ofensa imperdonable',copy:'Fortunato ha ofendido a Montresor mil veces. Cuando por fin lo insulta, Montresor jura vengarse, sin riesgos y sin que Fortunato lo note.',key:'Clave: Montresor sonríe y finge ser su amigo. Nunca muestra su rencor.',scene:0},
+ {tag:'II · EL CARNAVAL',title:'Un encuentro entre máscaras',copy:'En plena fiesta, Montresor encuentra a Fortunato, borracho y disfrazado de bufón. Le miente: compró un barril de amontillado, pero tiene dudas. Sabe que Fortunato no puede resistirse a un buen vino.',key:'La debilidad de Fortunato: su orgullo de experto en vinos.',scene:1},
+ {tag:'III · EL CAMINO',title:'Hacia las catacumbas',copy:'Montresor amenaza con ir a buscar a otro experto, Lucresi. Los celos de Fortunato hacen el resto: insiste en probarlo él mismo. El palazzo está vacío, porque Montresor ordenó a los criados no salir, sabiendo que se irían a la fiesta.',key:'Todo estaba planeado: nadie verá nada.',scene:2},
+ {tag:'IV · LAS ADVERTENCIAS',title:'Una tos en la oscuridad',copy:'En las húmedas catacumbas, Fortunato tose sin parar. Montresor le pide una y otra vez que regrese, pero es puro teatro: así Fortunato insiste más. Brindan con vino.',key:'Cuando alguien te ruega que no hagas algo, quizá quiere justo lo contrario.',scene:3},
+ {tag:'V · LA TRAMPA',title:'El nicho al fondo',copy:'Al fondo hay un nicho con argollas de hierro. Fortunato entra tambaleándose y Montresor lo encadena a la pared en un instante.',key:'Las cadenas ya estaban preparadas: era una trampa.',scene:4},
+ {tag:'VI · EL SILENCIO',title:'La última piedra',copy:'Montresor levanta un muro, hilera tras hilera. Fortunato grita, ríe y suplica, y al final solo se oyen sus cascabeles. Nadie ha descubierto el cuerpo en cincuenta años.',key:'Ahora te toca a ti: juega primero como Montresor. Después podrás vivir la historia como Fortunato.',scene:5}
+];
+const wrapL=(t,m)=>{const w=t.split(' ');let l=[],c='';w.forEach(x=>{if((c+' '+x).trim().length>m){l.push(c);c=x}else c=(c+' '+x).trim()});l.push(c);return l};
+function bub(x,y,w,t,px,py,o){o=o||{};const L=wrapL(t,Math.floor(w/6.2)),h=L.length*13+14,bx=Math.min(Math.max(px,x+16),x+w-16),f=o.f||'#fffbe8';
+ return `<g class="bub${o.d?' bub2':''}"><path d="M${bx-9} ${y+h-3}L${px} ${py}L${bx+9} ${y+h-3}Z" fill="${f}" stroke="#111" stroke-width="2.2" stroke-linejoin="round"/><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="14" fill="${f}" stroke="#111" stroke-width="2.5"/><path d="M${bx-7} ${y+h-1.2}H${bx+7}" stroke="${f}" stroke-width="3.5"/>`+L.map((q,i)=>`<text x="${x+w/2}" y="${y+15+i*13}" text-anchor="middle" font-size="10.5" font-weight="700" fill="#111"${o.i?' font-style="italic"':''}>${q}</text>`).join('')+'</g>'}
+const sfx=(x,y,t,c,sz)=>`<g class="sfx"><text x="${x}" y="${y}" text-anchor="middle" font-size="${sz||26}" font-weight="900" font-style="italic" fill="${c||'#ffd23f'}" stroke="#111" stroke-width="5" paint-order="stroke" transform="rotate(-8 ${x} ${y})">${t}</text></g>`;
+const OV=[
+ ()=>bub(18,62,170,'Soporté mil ofensas... pero ahora me insultó. ¡Juré vengarme!',112,184)+sfx(285,150,'¡JURO!','#e0553f',24),
+ ()=>bub(14,56,150,'¡Mi querido Fortunato! Tengo un barril de amontillado...',110,168)+bub(196,100,150,'¡¿Amontillado?! ¡Y en pleno carnaval!',265,150,{d:1}),
+ ()=>bub(14,60,150,'Cuidado en la escalera, amigo mío.',125,194,{i:1})+bub(196,100,150,'¡A tu bodega! ¡Quiero probarlo ya!',245,178,{d:1})+sfx(180,305,'tintín, tintín',14,'#e8a317'),
+ ()=>bub(196,60,150,'¡Cof, cof! No es nada... ¡sigamos!',255,186)+bub(14,106,150,'Volvamos, tu salud es preciosa... (¡finge!)',115,200,{i:1,d:1})+sfx(290,155,'¡COF!','#e0553f',22),
+ ()=>bub(186,54,160,'Pasa, amigo: ahí está el amontillado...',255,106,{i:1})+bub(14,100,150,'¿Dónde? No veo nada...',115,180,{d:1})+sfx(262,250,'¡CLANC!','#e0553f',28),
+ ()=>bub(96,100,170,'¡Por el amor de Dios, Montresor!',180,168,{f:'#e8e0d0',i:1})+sfx(180,215,'¡TOC, TOC!','#ffd23f',26)+sfx(180,275,'tintín...','#c9b48a',16),
+ ()=>bub(14,134,112,'Ven, amigo... te espera un tesoro.',100,184,{i:1})+bub(236,134,112,'¡Amontillado! ¡Vamos!',262,160,{d:1})+sfx(180,205,'¿AMONTILLADO?','#ffd23f',20)
+];
+function comicArt0(n){
+ let s='<defs><linearGradient id="comicbg" x2="0" y2="1"><stop stop-color="#35203a"/><stop offset="1" stop-color="#100b0a"/></linearGradient><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#f4d58a"/><stop offset="1" stop-color="#9b6329"/></linearGradient></defs><rect width="360" height="330" fill="url(#comicbg)"/>';
+ if(n===0){s+='<circle cx="280" cy="75" r="43" fill="#b68b55" opacity=".13"/><path d="M0 250L70 180 130 245 210 155 360 260V330H0Z" fill="#171016"/>';s+=P(112,235,'f',3.6,F_prof)+P(265,235,'j',3.6,0);s+=tx(180,45,'VENECIA · UNA PROMESA',13,'#e8a317',1)}
+ if(n===1){s+=bgCarn();s+=P(110,220,'f',3.5,F_prof)+P(265,220,'j',3.5,0);s+=tx(180,42,'¡CARNAVAL!',20,'#f4ebd0',1);s+='<path d="M180 95L210 75 240 95 210 115Z" fill="#b87333" stroke="#f4d58a" stroke-width="2"/>';}
+ if(n===2){s+=bgCrypt();s+='<path d="M10 300V130Q10 45 95 45T180 130V300M180 300V130Q180 45 265 45T350 130V300" fill="none" stroke="#80634b" stroke-width="13"/><path d="M0 300H360" stroke="#c9a063" stroke-width="5"/>';s+=P(125,240,'f',3.2,F_prof)+P(245,240,'j',3.2,0);s+=tx(180,35,'BAJO TIERRA',15,'#e8a317',1)}
+ if(n===3){s+=bgCrypt('#171018');s+='<path d="M0 55Q90 20 180 55T360 55" stroke="#8c6b50" stroke-width="5" fill="none"/><path d="M35 290Q180 245 325 290" stroke="#b08b5e" stroke-width="4" fill="none"/><g fill="#f4ebd0" opacity=".16"><circle cx="50" cy="70" r="24"/><circle cx="315" cy="100" r="34"/></g>';s+=P(115,245,'f',3.3,F_prof)+P(255,245,'j',3.3,0);s+=tx(180,35,'EL AIRE SE VUELVE HÚMEDO',11,'#c9b48a',1)}
+ if(n===4){s+=bgCrypt('#100b0b');s+='<rect x="205" y="105" width="115" height="170" fill="#3c3430" stroke="#b18b5e" stroke-width="5"/><path d="M205 105H320M205 145H320M205 185H320M205 225H320M245 105V275M285 105V275" stroke="#171210" stroke-width="5"/>';s+=P(115,245,'j',3.4,0)+tx(180,38,'UNA TRAMPA OCULTA',15,'#e0553f',1)}
+ if(n===5){s+=bgCrypt('#090708');s+='<rect x="75" y="75" width="210" height="220" fill="#51443b" stroke="#b18b5e" stroke-width="4"/>';for(let y=88;y<290;y+=34)for(let x=86+(y%2)*12;x<280;x+=48)s+='<rect x="'+x+'" y="'+y+'" width="42" height="27" rx="2" fill="#796653" stroke="#30251f" stroke-width="2"/>';s+=tx(180,43,'EL ÚLTIMO SILENCIO',15,'#c9a063',1);s+=tx(180,316,'REQUIESCAT IN PACE',10,'#c9b48a',1)}
+ if(n===6){s+=bgCarn()+P(100,238,'f',3.5,F_prof)+P(262,238,'j',3.5,0)+'<rect y="28" width="360" height="92" fill="#000" opacity=".62"/>'+tx(180,70,'EL TONEL',34,'#e8a317',1)+tx(180,102,'DE AMONTILLADO',25,'#f4ebd0',1)+tx(180,320,'Edgar Allan Poe · 1846',11,'#f4ebd0')}s+='<rect x="7" y="7" width="346" height="316" rx="8" fill="none" stroke="#d4b477" stroke-width="3"/><path d="M0 0L28 0 0 28M360 0H332L360 28M0 330V302L28 330M360 330H332L360 302" stroke="#f4ebd0" stroke-width="5" fill="none"/>';
+ return s;
+}
+function comicArt(n){return comicArt0(n)+'<g pointer-events="none">'+OV[n]()+'</g>'}
+function comicScene_old(n){
+ S.sc='comic';S.comicIndex=n;const c=COMIC[n];
+ R(comicArt(n));const svg=$('st').firstChild;if(svg)svg.classList.add('comic-in');
+ $('hud').innerHTML=`<span>PRÓLOGO · ${n+1}/6</span><span>🎬 Cómic cinematográfico</span>`;
+ T(`<small style="color:#d4a063;letter-spacing:1px"><b>${c.tag}</b></small><br><b style="font-size:19px">${c.title}</b><br>${c.copy}`);
+ B([[n===5?'Elegir personaje · Choose':'Siguiente escena  ▶',()=>{comicSound(n===5?'reveal':'page');if(n===5)characterSelect();else comicScene(n+1)}],['⏭ Saltar prólogo · Skip',()=>{comicSound('reveal');characterSelect()}]]);
+}
+function comicScene(n){
+ S.sc='comic';S.comicIndex=n;const c=COMIC[n],L=COMIC.length,last=n===L-1;
+ R(comicArt(c.scene));const svg=$('st').firstChild;if(svg)svg.classList.add('comic-in');
+ $('hud').innerHTML=`<span>📖 Prólogo · ${n+1}/${L}</span><span>🎬 Cómic</span>`;
+ T(`<small style="color:#d4a063;letter-spacing:1px"><b>${c.tag}</b></small><br><b style="font-size:19px">${c.title}</b><br>${c.copy}<br><br><small style="color:#e8c36a">💡 ${c.key}</small>`);
+ if(c.scene===4||c.scene===5)comicSound('impact');
+ B([[last?'Elegir personaje · Choose':'Siguiente viñeta  ▶ · Next',()=>{comicSound(last?'reveal':'page');if(last)characterSelect();else comicScene(n+1)}],['⏭ Saltar prólogo · Skip',()=>{comicSound('reveal');characterSelect()}]]);
+}
+function intro(){characterSelect();comicScene(0)}
 
 intro();
 </script>
